@@ -1,0 +1,380 @@
+<?php
+/* $Id$ */
+
+function user_badges_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      // This description is shown in the listing at admin/modules.
+      return t('Merit badges that administrators can assign to users.');
+  }
+}
+
+function user_badges_perm() {
+  return array('manage badges');
+}
+
+
+function user_badges_menu($may_cache) {
+  $access = user_access('manage badges');
+  if ($may_cache) {
+    $items[] = array('path'=>'admin/settings/user_badges', 'title'=>t('user badges'), 'callback'=>'user_badges_settings_page', 'access'=>$access);
+  }
+  else {
+  $items = array();
+    // kludge to hide tabs on confirm pages
+    // maybe a better way using menu_set_location()?
+    $hidetabs = ($_POST['op']=='Delete');
+    $items[] = array('path' => 'admin/settings/user_badges/list', 'title' => t('edit user badges'), 'access' => $access, 'type'=>$hidetabs ? MENU_CALLBACK : MENU_DEFAULT_LOCAL_TASK, 'weight' => -10);
+    $items[] = array('path'=>'admin/settings/user_badges/images', 'title'=>t('images'), 'callback'=>'user_badges_images_page', 'access'=>$access, 'type'=>$hidetabs ? MENU_CALLBACK : MENU_LOCAL_TASK );
+    $items[] = array('path'=>'admin/settings/user_badges/roles', 'title'=>t('roles'), 'callback'=>'user_badges_roles_page', 'access'=>$access, 'type'=>$hidetabs ? MENU_CALLBACK : MENU_LOCAL_TASK);
+    $items[] = array('path'=>'admin/settings/user_badges/delete', 'title'=>t('delete badge'), 'callback'=>'user_badges_delete', 'access'=>$access, 'type'=>MENU_CALLBACK);
+    if (arg(0) == 'user') {
+      if (user_access('manage badges')) {
+        $uid = arg(1);
+      }
+      if ($uid) {
+        $items[] = array('path' => "user/$uid/badges", 'title' => t('badges'), 'callback' => 'user_badges_page', 'access' => 'manage badges', 'type' => MENU_LOCAL_TASK, 'weight' => 5);
+      }
+    }
+  }
+  return $items;
+}
+
+
+function user_badges_user($op, &$edit, &$user, $category = 'account') {
+  switch ($op) {
+    case 'load': 
+      $user->badges = user_badges_get_badges($user->uid);
+      break;
+    case 'delete':
+      db_query('DELETE FROM {user_badges_user} WHERE uid = %d', $user->uid);
+      break;
+    case 'view':
+      foreach($user->badges as $badge) {
+        $output .= theme('user_badge', $badge);
+      }
+      if ($output) {
+        return array(t('Badges') => theme('user_badge_group', $output));
+      }
+  }
+}
+
+// user load
+// $user->badges is an array of badges
+
+function user_badges_page() {
+  $uid = arg(1);
+  if ($_POST['op']=='Save Badges') {
+    user_badges_user_save($_POST['edit'], $uid, FALSE);
+  }
+  drupal_set_title('edit badges for '.$user->name);
+  $allbadges = user_badges_get_badges('all');
+  $user = user_load(array('uid'=>$uid));
+  foreach ($allbadges as $badge) {
+    $form .= form_checkbox(theme('user_badge', $badge), 'badges]['.$badge->bid, 1, array_key_exists($badge->bid, $user->badges), $badge->name);
+  }
+  $form .= form_submit(t('Save Badges'));
+  $output = form($form);
+  print theme('page', $output);
+}
+
+function user_badges_user_save($edit, $uid, $quiet = TRUE) {
+  db_query('DELETE FROM {user_badges_user} WHERE uid=%d', $uid);
+  if (is_array($edit['badges'])) {
+    $success = TRUE;
+    foreach($edit['badges'] as $key=>$val) {
+      if ($val) {
+        $success = $success && (boolean) db_query("INSERT INTO {user_badges_user} (uid, bid) VALUES (%d, %d)", $uid, $key);
+      }
+    }
+    if ($success && !$quiet) {
+      drupal_set_message(t('Badges saved.'));
+    }
+    elseif (!$quiet) {
+      drupal_set_message(t('There was a problem saving badges to the database.'));
+    }
+  }
+  else {
+    if (!$quiet) {
+      drupal_set_message(t('Nothing was saved'));
+    }
+  }
+}
+
+function user_badges_settings_page($op = NULL, $bid = NULL) {
+  if ($_POST['op']['submit']) {
+    user_badges_save_badge($_POST['edit']);
+    return;
+  }
+  switch ($op) {
+    case 'edit':
+      if (is_numeric($bid)) {
+        $output = user_badges_edit_form($bid);
+        break;
+      }
+    case 'delete' :
+      if (is_numeric($bid)) {
+        $output = user_badges_delete($bid);
+        break;
+      }
+    default:
+      $badges = user_badges_get_badges('all');
+      $header = array(t('name'), t('image'), t('operations'));
+      if (is_array($badges)) {
+        foreach ($badges as $badge) {
+          $tablerow[$badge->bid]['name'] = $badge->name;
+          $tablerow[$badge->bid]['image'] = theme('image', $badge->image, $badge->image, $badge->image);
+          $tablerow[$badge->bid]['ops'] = l(t('edit'), 'admin/settings/user_badges/edit/'.$badge->bid).' '.l(t('delete'), 'admin/settings/user_badges/delete/'.$badge->bid);
+        }
+      }
+      $output = theme('table', $header, $tablerow, array('style'=>'width:100%'));
+      $output .= "<br/><br/>";
+      $output .= form_group(t('Add another'), user_badges_edit_form());
+  }
+  print theme('page', $output);
+}
+
+function user_badges_images_page() {
+  $op = $_POST['op'];
+  $edit = $_POST['edit'];
+  if ($_POST['edit']['confirm']) {
+    foreach($edit['deletes'] as $file) {
+      if (file_delete($file)) {
+        drupal_set_message($file . t(' deleted'));
+      }
+      else {
+        drupal_set_message(t('There was a problem deleting ') . $file);
+      }
+    }
+  }
+  switch ($op) {
+    case t('Save New Image'):
+      $dir = file_create_path('badges');
+      file_check_directory($dir, 1);
+      if ($file = file_save_upload('file', $dir)) {
+        if (image_get_info($file->filepath)) {
+          drupal_set_message('New image saved.');
+        } else {
+          file_delete($file->filepath);
+          drupal_set_message('Uploaded file does not appear to be a valid image file. Please try again.');
+        }
+      }
+      else {
+        drupal_set_message('There was a problem saving the image.');
+      }
+      break;
+    case t('Delete'):
+      foreach($edit['deletes'] as $key=>$val) {
+        if ($val) {
+          $list[] = $key;
+          $hiddens .= form_hidden('deletes][', $key);
+        }
+      }
+      if (is_array($list)) {      
+        $output = theme('confirm', t('Are you sure you want to delete these items?'), 'admin/settings/user_badges/images', theme('item_list', $list).t('<p>This action cannot be undone.</p>'), NULL, NULL, $hiddens);
+        print theme('page', $output);
+        return; // don't continue with this function
+      }
+      else {
+        drupal_set_message(t('Please select items to delete.'));
+      }
+  }
+  $param = array('enctype' => 'multipart/form-data');
+  $form .= form_file(t('Upload new image'), 'file', 40);
+  $form .= form_submit(t('Save New Image'));
+  $output = form($form, 'post', NULL, $param);
+  $selects = user_badges_image_selects();
+  if (count($selects)) {
+    $form .= "<br/><br/>";
+    $form .= '<hr />';
+    $form = '<h3>Delete</h3>';
+    foreach($selects as $imagepath => $imageimg) {
+      $form .= form_checkbox($imageimg, 'deletes]['.$imagepath, 1, FALSE, $imagepath);
+    }    
+    $form .= form_submit(t('Delete'));
+    $output .= form($form, 'post', NULL, $param);
+  }
+  print theme('page', $output);
+}
+
+function user_badges_roles_page() {
+  if ($_POST['op']=='Save Roles') {
+    user_badges_save_roles($_POST['edit']);
+  }
+  $roles = user_roles();
+  $badges = user_badges_get_roles();
+  $selects = array(''=>'inactive') + user_badges_get_badges('select');
+  foreach($roles as $key=>$val) {
+    //$form .= "<div class='container-inline'>";
+    $form .= form_select($val, 'roles]['.$key, $badges[$key], $selects);
+    //$form .= "</div>";
+  }
+  $form .= form_submit('Save Roles');
+  $output = form($form);  
+  
+  print theme('page', $output);
+}
+
+
+/**
+  * Return array of user badges
+  * if $uid is 'all', returns all badges
+  * if $uid is 'select', returns badges for form_select options
+  *
+  */
+
+function user_badges_get_badges($uid) {
+  $badges = array();
+  if ($uid == 'all' || $uid == 'select') {
+    $sql = db_query('SELECT b.bid, b.name, b.image FROM {user_badges_badges} b ORDER BY b.weight, b.name');
+  }
+  else {
+    $sql = db_query('SELECT b.bid, b.name, b.image FROM {user_badges_badges} b INNER JOIN {user_badges_user} u ON b.bid = u.bid WHERE u.uid = %d ORDER BY b.weight, b.name', $uid);
+  }
+  while ($badge = db_fetch_object($sql)) {
+    if ($uid == 'select') {
+      $badges[$badge->bid] = $badge->name;
+    }
+    else {
+      $badges[$badge->bid] = $badge;
+    }
+  }
+  return $badges;
+}
+
+
+function user_badges_edit_form($bid = NULL) {
+  if (is_numeric($bid)) {
+    $edit = db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
+    if (is_numeric($edit->bid)) {
+      $form .= form_hidden('bid', $edit->bid);
+    }
+  }
+  $form .= form_textfield(t('Name'), 'name', $edit->name, 40, 100, t('Name for the badge.<br/>Will be displayed as tooltip when rolling over badge image.<br/>'), NULL, TRUE);
+  $selects = user_badges_image_selects();
+  if (count($selects)) {
+    $form .= form_radios(t('Image'), 'image', $edit->image, $selects, t('Select an image to associate with this badge. Add more images '.l(t('here'), "admin/settings/user_badges/images")));
+  }
+  else {
+    $form .= t('<div><strong>You have not uploaded any badge images yet.</strong></div><div>Add images ').l(t('here'), "admin/settings/user_badges/images").'.</div>';    
+  }
+  $form .= form_weight(t('Weight'), 'weight', $edit->weight, 10, t('Lighter weighted items float to the top of lists. Heavier items go to the bottom.'));
+  $form .= '<div class="container-inline">';
+  $form .= form_submit('Submit');
+  if (is_numeric($bid)) {
+    $form .= l(t('Cancel'), 'admin/settings/user_badges');
+  }
+  $form .= '</div>';
+  $output = form($form);
+  return $output;
+}
+
+/**
+  * Saves informatio about a badge into the database
+  *
+  */
+
+function user_badges_save_badge($edit) {
+  $edit = array2object($edit);
+  if (is_numeric($edit->bid)) {
+    db_query('DELETE FROM {user_badges_badges} WHERE bid = %d', $edit->bid);
+  }
+  else {
+    $edit->bid = db_next_id('user_badges_badges');
+  }
+  $result = db_query("INSERT INTO {user_badges_badges} (bid, name, image, weight) VALUES (%d, '%s', '%s', %d)", $edit->bid, $edit->name, $edit->image, $edit->weight);
+  if ($result) {
+    drupal_set_message(t('Badge saved'));
+  }
+  else {
+    drupal_set_message(t('There was a problem saving the badge information into the database.'));
+  }
+  drupal_goto('admin/settings/user_badges');
+  return $result;
+}
+
+function user_badges_delete($bid) {
+  if (!$_POST['edit']['confirm']) {
+    $output = theme_confirm(t('Are you sure you want to delete this badge?'), 'admin/settings/user_badges');
+    print theme('page', $output);
+  }
+  else {
+    $result = db_query("DELETE FROM {user_badges_badges} WHERE bid = %d", $bid);
+    $result = $result && db_query("DELETE FROM {user_badges_user} WHERE bid = %d", $bid);
+    $result = $result && db_query("DELETE FROM {user_badges_roles} WHERE bid = %d", $bid);
+    if ($result) {
+      drupal_set_message(t('Badge deleted.'));
+    }
+    else {
+      drupal_set_message(t('There was a problem deleting the badge from the database.'));
+    }
+    drupal_goto('admin/settings/user_badges');
+  }
+}
+
+function user_badges_image_selects() {
+  $selects = array();
+  $dir = file_create_path('badges').'/';
+  $listings = file_scan_directory($dir, '.*', array('.', '..', 'CVS'), 0, FALSE);
+  foreach ($listings as $listing) {
+    $selects[$dir.$listing->basename] = theme('image', $dir.$listing->basename, $listing->basename, $listing->basename);
+  }
+  return $selects;
+}
+
+function user_badges_get_roles($rid = NULL){
+  $roles = array();
+  if ($rid) {
+    $sql = db_query('SELECT * FROM {user_badges_roles} WHERE rid = %d', $rid);
+  }
+  else {
+    $sql = db_query('SELECT * FROM {user_badges_roles}');
+  }
+  while ($row = db_fetch_object($sql)) {
+    $roles[$row->rid] = $row->bid;
+  }
+  return $roles;
+}
+
+function user_badges_save_roles($edit) {
+  if (is_array($edit['roles'])) {
+    $success = TRUE;
+    db_query('DELETE FROM {user_badges_roles}');
+    db_query("DELETE FROM {user_badges_user} WHERE type='role'");
+    foreach ($edit['roles'] as $key=>$val) {
+      // $key is rid
+      // $val is bid
+      if ($val) {
+        $success = $success && db_query('INSERT INTO {user_badges_roles} (rid, bid) VALUES (%d, %d)', $key, $val);
+        $success = $success && db_query("INSERT INTO {user_badges_user} (uid, bid, type) SELECT uid, %d, 'role' FROM {users_roles} WHERE rid=%d", $val, $key);
+      }
+    }
+    if ($success) {
+      drupal_set_message(t('Roles saved.'));
+    }
+    else {
+      drupal_set_message(t('There was a problem saving roles to the database'));
+    }
+  }
+}
+
+/**
+  * Return html representation of a badge image
+  *
+  */
+
+function theme_user_badge($badge) {
+  return theme('image', $badge->image, $badge->name, $badge->name);
+}
+
+/**
+  * Return html representation of a group of badges
+  *
+  */
+
+function theme_user_badge_group($html) {
+  return "<div class='user_badges'>$html</div>";
+}
+
+
+?>
