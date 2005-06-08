@@ -1,80 +1,44 @@
--- MySQL dump 10.9
---
--- ------------------------------------------------------
--- Server version	4.0.18-log
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE="NO_AUTO_VALUE_ON_ZERO" */;
-
---
+-- 
 -- Table structure for table `user_badges_badges`
---
+-- 
 
-CREATE TABLE `user_badges_badges` (
-  `bid` int(10) NOT NULL default '0',
-  `name` varchar(50) NOT NULL default '',
-  `image` varchar(80) NOT NULL default '',
-  `weight` int(2) NOT NULL default '0'
+CREATE TABLE user_badges_badges (
+  bid int(10) NOT NULL default '0',
+  name varchar(50) NOT NULL default '',
+  image varchar(80) NOT NULL default '',
+  weight int(2) NOT NULL default '0'
 ) TYPE=MyISAM;
 
---
--- Dumping data for table `user_badges_badges`
---
+-- --------------------------------------------------------
 
+-- 
+-- Table structure for table `user_badges_product`
+-- 
 
-/*!40000 ALTER TABLE `user_badges_badges` DISABLE KEYS */;
-LOCK TABLES `user_badges_badges` WRITE;
-UNLOCK TABLES;
-/*!40000 ALTER TABLE `user_badges_badges` ENABLE KEYS */;
+CREATE TABLE user_badges_product (
+  bid int(10) NOT NULL default '0',
+  nid int(10) NOT NULL default '0'
+) TYPE=MyISAM;
 
---
+-- --------------------------------------------------------
+
+-- 
 -- Table structure for table `user_badges_roles`
---
+-- 
 
-CREATE TABLE `user_badges_roles` (
-  `rid` int(10) NOT NULL default '0',
-  `bid` int(10) NOT NULL default '0'
+CREATE TABLE user_badges_roles (
+  rid int(10) NOT NULL default '0',
+  bid int(10) NOT NULL default '0'
 ) TYPE=MyISAM;
 
---
--- Dumping data for table `user_badges_roles`
---
+-- --------------------------------------------------------
 
-
-/*!40000 ALTER TABLE `user_badges_roles` DISABLE KEYS */;
-LOCK TABLES `user_badges_roles` WRITE;
-UNLOCK TABLES;
-/*!40000 ALTER TABLE `user_badges_roles` ENABLE KEYS */;
-
---
+-- 
 -- Table structure for table `user_badges_user`
---
+-- 
 
-CREATE TABLE `user_badges_user` (
-  `uid` int(10) NOT NULL default '0',
-  `bid` int(10) NOT NULL default '0',
-  `type` varchar(20) NOT NULL default ''
+CREATE TABLE user_badges_user (
+  uid int(10) NOT NULL default '0',
+  bid int(10) NOT NULL default '0',
+  type varchar(20) NOT NULL default ''
 ) TYPE=MyISAM;
-
---
--- Dumping data for table `user_badges_user`
---
-
-
-/*!40000 ALTER TABLE `user_badges_user` DISABLE KEYS */;
-LOCK TABLES `user_badges_user` WRITE;
-UNLOCK TABLES;
-/*!40000 ALTER TABLE `user_badges_user` ENABLE KEYS */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
