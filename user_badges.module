@@ -52,20 +52,34 @@ function user_badges_menu($may_cache) {
 }
 
 
+/**
+  * Implementation of hook_user()
+  *
+  */
+
 function user_badges_user($op, &$edit, &$user, $category = 'account') {
   switch ($op) {
     case 'load': 
       $user->badges = user_badges_get_badges($user->uid);
+      break;
+    case 'update':
+    case 'insert':
+      db_query('DELETE FROM {user_badges_user} WHERE uid = %d', $user->uid);
+      $roles = user_badges_get_roles();
+      foreach((array)$edit['roles'] as $rid => $val) {
+        $newedit[$roles[$rid]] = $val;
+      }
+      user_badges_user_save(array('badges'=>$newedit), $user->uid, !user_access('manage badges'));
       break;
     case 'delete':
       db_query('DELETE FROM {user_badges_user} WHERE uid = %d', $user->uid);
       break;
     case 'view':
       foreach($user->badges as $badge) {
-        $output .= theme('user_badge', $badge);
+        $badgeimgs[] .= theme('user_badge', $badge);
       }
-      if ($output) {
-        return array(t('Badges') => theme('user_badge_group', $output));
+      if ($badgeimgs) {
+        return array(t('Badges') => theme('user_badge_group', $badgeimgs));
       }
   }
 }
@@ -88,6 +102,14 @@ function user_badges_page() {
   $output = form($form);
   print theme('page', $output);
 }
+
+/**
+  * Assign user badges to a user
+  *
+  * $edit is an array containing badges array
+  * $uid is the user id
+  * $quiet suppresses message display
+  */
 
 function user_badges_user_save($edit, $uid, $quiet = TRUE) {
   db_query('DELETE FROM {user_badges_user} WHERE uid=%d', $uid);
@@ -228,9 +250,12 @@ function user_badges_roles_page() {
 
 
 /**
-  * Return array of user badges
+  * Return array of user badges where keys are badge ids (bid)
+  *   and values are object containing badge info
+  * if $uid is a user id, returns badges for that user
   * if $uid is 'all', returns all badges
   * if $uid is 'select', returns badges for form_select options
+  *   returned values for 'select' are just badge names
   *
   */
 
@@ -281,7 +306,7 @@ function user_badges_edit_form($bid = NULL) {
 }
 
 /**
-  * Saves informatio about a badge into the database
+  * Saves information about a badge into the database
   *
   */
 
@@ -326,12 +351,18 @@ function user_badges_delete($bid) {
 function user_badges_image_selects() {
   $selects = array();
   $dir = file_create_path('badges').'/';
-  $listings = file_scan_directory($dir, '.*', array('.', '..', 'CVS'), 0, FALSE);
+  $listings = file_scan_directory($dir, '.*\.(gif|jpg|jpeg|png)', array('.', '..', 'CVS'), 0, FALSE);
   foreach ($listings as $listing) {
     $selects[$dir.$listing->basename] = theme('image', $dir.$listing->basename, $listing->basename, $listing->basename);
   }
   return $selects;
 }
+
+/**
+  * Returns an array where keys are role ids (rid) and values are badge ids (bid)
+  * $rid - if set, return only value for this role
+  *
+  */
 
 function user_badges_get_roles($rid = NULL){
   $roles = array();
@@ -346,6 +377,11 @@ function user_badges_get_roles($rid = NULL){
   }
   return $roles;
 }
+
+/**
+  * Save information about roles for user_badges (in settings)
+  *
+  */
 
 function user_badges_save_roles($edit) {
   if (is_array($edit['roles'])) {
@@ -369,6 +405,35 @@ function user_badges_save_roles($edit) {
   }
 }
 
+
+/**
+  * Returns HTML representation of user badges for given user
+  * $array is array defining criteria for user_load()
+  * most common use will be:
+  *   user_badges_for_user(array('uid'=>123));
+  *
+  */
+
+function user_badges_for_user($array) {
+  $user = user_load($array);
+  foreach((array)$user->badges as $badge) {
+    $badges[] = theme('user_badge', $badge);
+  }
+  if ($badges) {
+    return theme('user_badge_group', $badges);
+  }
+}
+
+/**
+  * Return html representation of a group of badges
+  * $badgeimages is an array of badge image tags from theme_user_badge()
+  *
+  */
+
+function theme_user_badge_group($badgeimages) {
+  return "<div class='user_badges'>".implode('', $badgeimages)."</div>";
+}
+
 /**
   * Return html representation of a badge image
   *
@@ -378,14 +443,7 @@ function theme_user_badge($badge) {
   return theme('image', $badge->image, $badge->name, $badge->name);
 }
 
-/**
-  * Return html representation of a group of badges
-  *
-  */
 
-function theme_user_badge_group($html) {
-  return "<div class='user_badges'>$html</div>";
-}
 
 function user_badges_products_page() {
   if ($_POST['op']=='Save') {
@@ -425,6 +483,39 @@ function user_badges_save_products($edit) {
     }
   }
 }
+
+/* Ecommerce isn't ready for this yet....
+
+function user_badges_productapi(&$node, $op, $a3 = null, $a4 = null) {
+  switch ($op) {
+    case 'fields':
+      return array('badge' => $node->badge);
+      
+    case 'form':
+      $badges = user_badges_get_products();
+      $selects = array(''=>'inactive') + user_badges_get_badges('select');
+      $form .= form_select(t('User Badge'), 'badge', $node->badge, $selects, t('Automatically assign this user badge to users who purchase this product.'));
+      return $output;
+
+    case 'load':
+      return db_fetch_object(db_query('SELECT bid AS badge FROM {user_badges_product} WHERE nid = %d', $node->nid));
+
+    // Node has been saved, write to product tables.
+    case 'insert':
+      return db_query('INSERT INTO {user_badges_product} (nid, bid) VALUES (%d, %d)', $node->nid, $node->badge);
+
+    case 'update':
+      return db_query('UPDATE {ec_product_auction} SET expires = %d WHERE nid = %d', $node->expires, $node->nid);
+
+    case 'delete':
+      db_query('DELETE FROM {ec_product_auction} WHERE nid = %d', $node->nid);
+      db_query('DELETE FROM {ec_auction_bid} WHERE nid = %d', $node->nid);
+  }
+
+  return $output;
+}
+
+*/
 
 
 function user_badges_ecommerceapi($t, $op) {
