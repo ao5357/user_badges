@@ -279,6 +279,15 @@ function user_badges_get_badges($uid) {
 }
 
 
+/**
+  * Return badge object for given badge id
+  */
+  
+function user_badges_get_badge($bid) {
+  return db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
+}
+
+
 function user_badges_edit_form($bid = NULL) {
   if (is_numeric($bid)) {
     $edit = db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
