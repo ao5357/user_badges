@@ -78,7 +78,7 @@ function user_badges_user($op, &$edit, &$user, $category = 'account') {
         $message = user_access('manage badges');
 
         // what are the added roles?
-        $added = array_diff(array_keys($edit['roles']), array_keys($user->roles));
+        $added = array_diff(array_keys($edit['roles']), array_keys((array)$user->roles));
         foreach($added as $rid){
           // if this role has a badge
           if (key_exists($rid, $roles)){
@@ -93,7 +93,7 @@ function user_badges_user($op, &$edit, &$user, $category = 'account') {
         }
 
         // what are the removed roles?
-        $removed = array_diff(array_keys($user->roles), array_keys($edit['roles']));
+        $removed = array_diff(array_keys((array)$user->roles), array_keys($edit['roles']));
         foreach($removed as $rid){
           // if this role has a badge
           if (key_exists($rid, $roles)){
