@@ -611,10 +611,10 @@ function user_badges_ecommerceapi($t, $op) {
     case 'on payment completion':
       $productbadges = user_badges_get_products();
       foreach ($t['items'] as $item) {
-        if (array_key_exists($item['nid'], $productbadges)) {
+        if (array_key_exists($item->nid, $productbadges)) {
           // no duplicates please...
-          db_query("DELETE FROM {user_badges_user} WHERE uid=%d AND bid=%d", $t['uid'], $productbadges[$item['nid']]);
-          db_query("INSERT INTO {user_badges_user} (uid, bid, type) VALUES (%d, %d, 'product')", $t['uid'], $productbadges[$item['nid']]);
+          db_query("DELETE FROM {user_badges_user} WHERE uid=%d AND bid=%d", $t['uid'], $productbadges[$item->nid]);
+          db_query("INSERT INTO {user_badges_user} (uid, bid, type) VALUES (%d, %d, 'product')", $t['uid'], $productbadges[$item->nid]);
         }
       }
   }
