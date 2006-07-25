@@ -1,0 +1,26 @@
+<?php
+// $Id$
+
+function user_badges_install() {
+  $ret = array();
+  $ret[] = db_query("CREATE TABLE {user_badges_badges} (
+  bid int(10) NOT NULL default '0',
+  name varchar(50) NOT NULL default '',
+  image varchar(80) NOT NULL default '',
+  weight int(2) NOT NULL default '0'
+  )");
+  $ret[] = db_query("CREATE TABLE {user_badges_product} (
+  bid int(10) NOT NULL default '0',
+  nid int(10) NOT NULL default '0'
+)");
+  $ret[] = db_query("CREATE TABLE {user_badges_roles} (
+  rid int(10) NOT NULL default '0',
+  bid int(10) NOT NULL default '0'
+)");
+  $ret[] = db_query("CREATE TABLE {user_badges_user} (
+  uid int(10) NOT NULL default '0',
+  bid int(10) NOT NULL default '0',
+  type varchar(20) NOT NULL default ''
+)");
+  return $ret;
+}
