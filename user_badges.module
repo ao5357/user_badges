@@ -280,11 +280,7 @@ function user_badges_user_remove_badge($uid, $bid, $type = NULL){
 }
 
 function user_badges_settings_page($op = NULL, $bid = NULL) {
-  //if ($_POST['op']['submit']) {
-  //  user_badges_save_badge($_POST['edit']);
-  //    dump('edit', $_POST['edit']);
-  //  return;
-  //}
+  
   switch ($op) {
     case 'edit':
       if (is_numeric($bid)) {
@@ -709,8 +705,7 @@ function user_badges_products_page() {
   return $output;
 }
 
-function user_badges_products_page_submit($form_id, $form_values) {
-  dump('fv', $form_values);
+function user_badges_products_page_submit($form_id, $form_values) {  
   user_badges_save_products($form_values['products']);  
 } 
 
