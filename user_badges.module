@@ -100,18 +100,19 @@ function user_badges_menu($may_cache) {
  */
 function user_badges_user($op, &$edit, &$user, $category = 'account') {
   switch ($op) {
+  
     case 'load':
       if ($user->uid > 0) {
         $user->badges = user_badges_get_badges($user->uid);
       }
       break;
+      
     case 'insert':
       if (is_array($user->roles)){
         // get the list of role badges
         $roles = user_badges_get_roles();
         $badges = user_badges_get_badges('select');
-        $message = user_access('manage badges');
-        
+        $message = user_access('manage badges');        
         $rids = array_keys($user->roles);
         foreach($rids as $rid){
           // if this role has a badge
@@ -126,11 +127,15 @@ function user_badges_user($op, &$edit, &$user, $category = 'account') {
           }
         }       
       }      
-      break;      
+      break;  
+          
     case 'update':
       if (is_array($edit['roles'])){
-        // badges only get assigned or removed when a user's role assignments are changed
-
+        // badges only get assigned or removed when a user's role assignments are changed               
+        
+        // Add authenticated users (code below only cares about array keys) to prevent badge deletion        
+        $new_roles = $edit['roles'];
+        $new_roles[2] = 2;        
         // get the list of role badges
         $roles = user_badges_get_roles();
         $badges = user_badges_get_badges('select');
@@ -138,7 +143,7 @@ function user_badges_user($op, &$edit, &$user, $category = 'account') {
         $message = user_access('manage badges');
 
         // what are the added roles?
-        $added = array_diff(array_keys($edit['roles']), array_keys((array)$user->roles));
+        $added = array_diff(array_keys($new_roles), array_keys((array)$user->roles));
         foreach($added as $rid){
           // if this role has a badge
           if (key_exists($rid, $roles)){
@@ -153,7 +158,7 @@ function user_badges_user($op, &$edit, &$user, $category = 'account') {
         }
 
         // what are the removed roles?
-        $removed = array_diff(array_keys((array)$user->roles), array_keys($edit['roles']));
+        $removed = array_diff(array_keys((array)$user->roles), array_keys($new_roles));
         foreach($removed as $rid){
           // if this role has a badge
           if (key_exists($rid, $roles)){
@@ -166,9 +171,11 @@ function user_badges_user($op, &$edit, &$user, $category = 'account') {
         }
       }
       break;
+
     case 'delete':
       db_query('DELETE FROM {user_badges_user} WHERE uid = %d', $user->uid);
       break;
+
     case 'view':
       foreach($user->badges as $badge) {
         $badgeimgs[] = theme('user_badge', $badge);
