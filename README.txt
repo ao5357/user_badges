@@ -3,16 +3,22 @@
     developed by: Jeff Robbins | jjeff | robbins (att) jjeff (d0t) com
 ------------------------------------------------------------------------------
 
-Dependencies
-============
-- upload
+Dependencies: In order to upload images via the user interface, user badges 
+depends on
+ 
+- Upload 
+- Drupal 4.7 with the minor version 2 or higher
+
+If your configuration doesn't meet those requirements, you can upload badges via
+FTP to files/badges, where files is the filesystem path (administer >> settings).
 
 Current maintainer: Heine Deelstra (http://drupal.org/user/17943)
+
 
 The User Badges module allows each user to be assigned 'badges', displayed as
 a series of iconic images. A common use will probably be to display the badges
 along with the user's information within forums, comments, or node postings.
-These badges can be assigned indivicually by the administrator or attached to
+These badges can be assigned indiviually by the administrator or attached to
 a role so that, for example, all users in the 'admin' role will show the
 'Administrator' badge which could display as any graphic.
 

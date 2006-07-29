@@ -287,7 +287,7 @@ function user_badges_user_remove_badge($uid, $bid, $type = NULL){
 }
 
 function user_badges_settings_page($op = NULL, $bid = NULL) {
-  
+
   switch ($op) {
     case 'edit':
       if (is_numeric($bid)) {
@@ -325,10 +325,14 @@ function user_badges_edit_form_submit($form_id, $form_values) {
 }
 
 function user_badges_images_page() {
-  if(module_exist('upload')) {
+  if (module_exist('upload') && function_exists('upload_munge_filename')) {
     $form['new']['upload'] = array('#type' => 'file', '#title' => t('Upload image'), '#size' => 40); 
     $form['new']['attach'] = array('#type' => 'submit', '#value' => t('Upload'));
-  } else {
+  } 
+  else if (module_exist('upload')) {
+    drupal_set_message(t('Upload of images requires at least Drupal 4.7.2.'));
+  }
+  else {
   	drupal_set_message(t('Upload of images requires the upload module to be enabled.'));
   }
     
@@ -365,9 +369,8 @@ function user_badges_images_page_submit($form_id, $form_values) {
     if($is_writable) {  
       $source = file_check_upload('upload');      
       // Security measure to prevent exploit of file.php.png
-      if(module_exist('upload')) {
-        $source->filename = upload_munge_filename($source->filename);
-      } 
+      $source->filename = upload_munge_filename($source->filename);
+       
       if ($file = file_save_upload($source, $dir)) {
         if (image_get_info($file->filepath)) {
           drupal_set_message(t('New image saved.'));
@@ -385,12 +388,12 @@ function user_badges_images_page_submit($form_id, $form_values) {
       }
     }
     if (is_array($to_delete)) {
-      user_badges_image_delete_confirm($to_delete);
+      user_badges_image_delete($to_delete);
     }      
   }
 }
 
-function user_badges_image_delete_confirm($to_delete) {
+function user_badges_image_delete($to_delete) {
   foreach ($to_delete as $path) {
     if(file_check_location($path, file_create_path('badges'))) {
       file_delete($path); 
