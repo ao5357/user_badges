@@ -679,7 +679,9 @@ function user_badges_for_user($array) {
   */
 
 function theme_user_badge_group($badgeimages) {
-  return "<div class='user_badges'>".implode('', $badgeimages)."</div>";
+  if (!empty($badgeimages)) {
+   return "<div class='user_badges'>".implode('', $badgeimages)."</div>";
+  }
 }
 
 /**
