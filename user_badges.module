@@ -610,7 +610,7 @@ function user_badges_save_roles($roles) {
         $success = $success && db_query('INSERT INTO {user_badges_roles} (rid, bid) VALUES (%d, %d)', $rid, $bid);
         // Authenticated user, rid 2 has no entry in the users_role table
         if($rid == 2) {
-          $success = $success && db_query("INSERT INTO user_badges_user (uid, bid, type) SELECT uid, %d, 'role' FROM users WHERE uid > 0", $bid);         
+          $success = $success && db_query("INSERT INTO {user_badges_user} (uid, bid, type) SELECT uid, %d, 'role' FROM {users} WHERE uid > 0", $bid);         
         } 
         else {
           $success = $success && db_query("INSERT INTO {user_badges_user} (uid, bid, type) SELECT uid, %d, 'role' FROM {users_roles} WHERE rid=%d", $bid, $rid);
