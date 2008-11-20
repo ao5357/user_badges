@@ -403,7 +403,10 @@ function user_badges_images_form_validate($form, &$form_state) {
     $dir = file_create_path('badges');
     $is_writable = file_check_directory($dir, 1);
     if ($is_writable) {
-      if ($file = file_save_upload('upload', array(), $dir)) {
+      $validators = array(
+        'file_validate_extensions' => array('png jpg jpeg'),
+      );
+      if ($file = file_save_upload('upload', $validators, $dir)) {
         if (!image_get_info($file->filepath)) {
           file_delete($file->filepath);
           form_set_error('upload', t('Uploaded image file does not appear to be a valid image file.  Please try again'));
