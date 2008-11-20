@@ -17,6 +17,12 @@ star graphics) or as an incentive for users. They can also be a quick way to
 identify moderators, administrators, or anyone with a given role.
 
 
+Limitation
+==========
+
+User Badges is not compatible with the "private" file download method.
+
+
 Dependencies
 ============
 In order to upload images via the user interface, user badges depends on:
