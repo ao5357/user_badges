@@ -1,0 +1,10 @@
+<?php
+
+function user_badges_products_install() {
+  
+}
+
+function user_badges_products_uninstall() {
+  
+}
+
