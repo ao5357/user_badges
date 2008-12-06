@@ -1,4 +1,25 @@
 <?php
+// $Id$
+
+/**
+ * @file
+ * @brief User Badges Product module file
+ * 
+ * This file contains all the functions used by the module.
+ *
+ * @author Jeff Robbins (jjeff), http://drupal.org/user/17190
+ * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
+ * @author Heine Deelstra (Heine), http://drupal.org/user/17943
+ * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
+ *
+ * @warning For more information on licensing, read the LICENCE.txt file.
+ *
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
 
 function user_badges_help($section) {
   switch ($section) {
@@ -10,6 +31,10 @@ function user_badges_help($section) {
   }
 }
 
+
+/**
+ * Implementation of hook_menu().
+ */
 function user_badges_products_menu() {
   $items = array();
   $items['admin/user/user_badges/products'] = array(
@@ -21,6 +46,7 @@ function user_badges_products_menu() {
   );
   return $items;
 }
+
 
 function user_badges_products_page($form_state) {
   $products = user_badges_products_get_product_list();
@@ -45,10 +71,12 @@ function user_badges_products_page($form_state) {
   return $output;
 }
 
+
 function user_badges_products_page_submit($form, &$form_state) {
   $form_values = $form_state['values'];
   user_badges_products_save_products($form_values['products']);
 }
+
 
 function user_badges_products_save_products($edit) {
   if (is_array($edit)) {

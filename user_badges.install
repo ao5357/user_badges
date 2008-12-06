@@ -1,6 +1,25 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * @brief User Badges install file
+ * 
+ * This file contains all the installation functions of the schema, tables and variables 
+ * used by the module.
+ *
+ * @author Jeff Robbins (jjeff), http://drupal.org/user/17190
+ * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
+ * @author Heine Deelstra (Heine), http://drupal.org/user/17943
+ * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
+ *
+ * @warning For more information on licensing, read the LICENCE.txt file.
+ *
+ */
+
+/**
+ * Implementation of hook_schema()
+ */
 function user_badges_schema() {
   $schema = array();
   $schema['user_badges_badges'] = array(
@@ -31,6 +50,13 @@ function user_badges_schema() {
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0
+      ),
+      'href' => array(
+        'description' => t('Badge description URL'),
+        'type' => 'varchar',
+        'length' => 80,
+        'not null' => FALSE,
+        'default' => '',
       ),
     ),
     'primary key' => array('bid'),
@@ -119,10 +145,18 @@ function user_badges_schema() {
   return $schema;
 }
 
+
+/**
+ * Implementation of hook_install()
+ */
 function user_badges_install() {
   drupal_install_schema('user_badges');
 }
 
+
+/**
+ * Implementation of hook_uninstall()
+ */
 function user_badges_uninstall() {
   // Delete files.
   $dir = file_create_path('badges');
@@ -140,10 +174,23 @@ function user_badges_uninstall() {
   drupal_uninstall_schema('user_badges');
 }
 
+
+/**
+ * Implementation of hook_update_N()
+ * new DB structure
+ */
 function user_badges_update_6001() {
   $ret = array();
   db_drop_primary_key($ret, 'user_badges_user');
   db_add_primary_key($ret, 'user_badges_user', array('bid', 'uid', 'type'));
   db_add_index($ret, 'user_badges_user', 'type', array('type'));
+  return $ret;
+}
+
+
+function user_badges_update_6100() {
+  $ret = array();
+  db_add_field($ret, 'user_badges_badges', 'href', 
+    array('type' => 'varchar', 'length' => 80, 'not null' => FALSE, 'default' => ''));
   return $ret;
 }

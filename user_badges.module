@@ -1,7 +1,23 @@
 <?php
-/* $Id$ */
+// $Id$
 
-// TODO: make it work with private files.
+/**
+ * @file
+ * @brief User Badges module file
+ * 
+ * This file contains all the functions used by the module.
+ *
+ * @author Jeff Robbins (jjeff), http://drupal.org/user/17190
+ * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
+ * @author Heine Deelstra (Heine), http://drupal.org/user/17943
+ * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
+ *
+ * @warning For more information on licensing, read the LICENCE.txt file.
+ *
+ * @todo
+ * - Support for private files
+ */
+
 
 /**
  * Implementation of hook_help().
@@ -23,12 +39,14 @@ function user_badges_help($path, $arg) {
   }
 }
 
+
 /**
  * Implementation of hook_perm().
  */
 function user_badges_perm() {
   return array('manage badges');
 }
+
 
 /**
  * Implementation of hook_menu().
@@ -62,6 +80,13 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_LOCAL_TASK,
   );
+  $items['admin/user/user_badges/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('user_badges_settings_form'),
+    'access arguments' => $access,
+    'type' => MENU_LOCAL_TASK,
+  );
   $items['admin/user/user_badges/delete'] = array(
     'title' => 'Delete badge',
     'page callback' => 'drupal_get_form',
@@ -80,6 +105,7 @@ function user_badges_menu() {
 
   return $items;
 }
+
 
 /**
  * Implementation of hook_user().
@@ -178,6 +204,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
   }
 }
 
+
 /**
  * Implementation of hook_theme().
  */
@@ -196,6 +223,7 @@ function user_badges_theme() {
   return $themes;
 }
 
+
 /**
  * Define the page on user/uid/badges.
  */
@@ -204,6 +232,7 @@ function user_badges_page($account) {
 
   return drupal_get_form('user_badges_page_form', $account);
 }
+
 
 /**
  * Form to assign badges to users.
@@ -238,12 +267,13 @@ function user_badges_page_form_submit($form, &$form_state) {
   user_badges_user_save($badges, $uid, FALSE);
 }
 
+
 /**
  * Assign user badges to a user
  *
- * $edit is an array containing badges array
- * $uid is the user id
- * $quiet suppresses message display
+ * @param $edit is an array containing badges array
+ * @param $uid is the user id
+ * @param $quiet suppresses message display
  */
 function user_badges_user_save($edit, $uid, $quiet = TRUE) {
   $badges = user_badges_get_badges($uid);
@@ -286,23 +316,31 @@ function user_badges_user_save($edit, $uid, $quiet = TRUE) {
   }
 }
 
+
 /**
  * Add a badge to user.
  *
- * @param $uid
- *   User ID.
- * @param $bid
- *   Badge ID.
- * @param $type
- *   Whether set as part of the role, or individually assigned ('user', 'role').
+ * @param $uid User ID.
+ * @param $bid Badge ID.
+ * @param $type Whether set as part of the role, or individually assigned ('user', 'role').
  *
- * @return unknown
+ * @return bool with query success
  */
 function user_badges_user_add_badge($uid, $bid, $type = NULL) {
   user_badges_user_remove_badge($uid, $bid, $type);
   return db_query('INSERT INTO {user_badges_user} (uid, bid, type) VALUES (%d, %d, \'%s\')', $uid, $bid, $type);
 }
 
+
+/**
+ * remove a badge from user.
+ *
+ * @param $uid User ID.
+ * @param $bid Badge ID.
+ * @param $type Whether set as part of the role, or individually assigned ('user', 'role').
+ *
+ * @return bool with query success
+ */
 function user_badges_user_remove_badge($uid, $bid, $type = NULL) {
   if (is_null($type)) {
     return db_query('DELETE FROM {user_badges_user} WHERE uid=%d AND bid=%d', $uid, $bid);
@@ -311,6 +349,7 @@ function user_badges_user_remove_badge($uid, $bid, $type = NULL) {
     return db_query('DELETE FROM {user_badges_user} WHERE uid=%d AND bid=%d AND type=\'%s\'', $uid, $bid, $type);
   }
 }
+
 
 function user_badges_settings_page($op = NULL, $bid = NULL) {
   switch ($op) {
@@ -354,6 +393,7 @@ function user_badges_edit_form_submit($form, &$form_state) {
   $form_state['redirect'] = user_badges_save_badge($form_state['values']);
 }
 
+
 /**
  * Define a form to upload the badge images.
  */
@@ -388,6 +428,7 @@ function user_badges_images_form($form_state) {
   }
   return $form;
 }
+
 
 /**
  * Validate the submission.
@@ -431,6 +472,7 @@ function user_badges_images_form_validate($form, &$form_state) {
   }
 }
 
+
 function user_badges_hold_temporary_file($file = NULL) {
   static $static_file;
   if (isset($file)) {
@@ -438,6 +480,7 @@ function user_badges_hold_temporary_file($file = NULL) {
   }
   return $file;
 }
+
 
 function user_badges_images_form_submit($form, &$form_state) {
   $op = $form_state['clicked_button']['#value'];
@@ -458,6 +501,7 @@ function user_badges_images_form_submit($form, &$form_state) {
   }
 }
 
+
 function user_badges_image_delete($to_delete) {
   foreach ($to_delete as $path) {
     if (file_check_location($path, file_create_path('badges'))) {
@@ -466,10 +510,26 @@ function user_badges_image_delete($to_delete) {
   }
 }
 
+
 function user_badges_roles_form() {
   $roles = user_roles();
   $badges = user_badges_get_roles();
   $selects = array('' => 'inactive') + user_badges_get_badges('select');
+
+  $form['blocked'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Blocked user badge'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => TRUE,
+  );
+  $form['blocked'][0] = array(
+    '#type' => 'select',
+    '#default_value' => $badges[0],
+    '#options' => $selects,
+  ); 
+
+
   $form['roles'] = array('#tree' => TRUE);
   foreach ($roles as $rid => $role) {
     if ($rid != 1) { // no badges for the anonymous role
@@ -489,8 +549,10 @@ function user_badges_roles_form() {
 }
 
 function user_badges_roles_form_submit($form, &$form_state) {
-  user_badges_save_roles($form_state['values']['roles']);
+  $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
+  user_badges_save_roles($array);
 }
+
 
 /**
  * Return array of user badges where keys are badge ids (bid)
@@ -506,10 +568,37 @@ function user_badges_get_badges($uid) {
     $past_uid = $uid;
     $badges = array();
     if ($uid == 'all' || $uid == 'select') {
-      $sql = db_query('SELECT b.bid, b.weight, b.name, b.image FROM {user_badges_badges} b ORDER BY b.weight, b.name');
+      $sql = db_query('
+        SELECT b.bid, b.weight, b.name, b.image, b.href 
+        FROM {user_badges_badges} b 
+        ORDER BY b.weight, b.name'
+      );
     }
     else {
-      $sql = db_query('SELECT DISTINCT b.bid, b.weight, b.name, b.image FROM {user_badges_badges} b INNER JOIN {user_badges_user} u ON b.bid = u.bid WHERE u.uid = %d ORDER BY b.weight, b.name', $uid);
+      $usr = db_result(db_query('SELECT COUNT(uid) FROM {users} WHERE uid = %d AND status = 0', $uid));
+  
+      if ($usr && variable_get('user_badges_showblocked', 0)) {
+        $sql = db_query('
+          SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href 
+          FROM {user_badges_badges} b 
+            INNER JOIN {user_badges_user} u ON b.bid = u.bid 
+            INNER JOIN {user_badges_roles} r ON b.bid = r.bid
+          WHERE u.uid = %d AND r.rid = 0
+          ORDER BY b.weight, b.name', 
+          $uid
+        );
+      }
+      else {
+        $limit = variable_get('user_badges_showone', 0) ? ' LIMIT 1 ' : '';
+        $sql = db_query('
+          SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href 
+          FROM {user_badges_badges} b INNER JOIN {user_badges_user} u ON b.bid = u.bid 
+          WHERE u.uid = %d 
+          ORDER BY b.weight, b.name
+          %s', 
+          $uid, $limit
+        );
+      }
     }
     while ($badge = db_fetch_object($sql)) {
       if ($uid == 'select') {
@@ -524,12 +613,14 @@ function user_badges_get_badges($uid) {
   return $badges;
 }
 
+
 /**
  * Return badge object for given badge id
  */
 function user_badges_get_badge($bid) {
   return db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
 }
+
 
 /**
  * Define the edit form for userbadges.
@@ -574,12 +665,26 @@ function user_badges_edit_form($form_state, $bid = NULL) {
     '#delta' => 10,
     '#description' => t('Lighter weighted items float to the top of lists. Heavier items go to the bottom.'),
   );
+  $form['href'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Description URL'),
+    '#description' => t('You can specify here the link where your badge will redirect your user.
+      This is useful for explanation pages about the badge, for instance. If you do not whish 
+      your badge to be clickable, please leave this field empty') .'<br />'.
+      '<u>'. t('Tips:') .'</u>'.'<ul>'.
+        '<li>'. t('If you provide the full URL, it will be considered an external URL.') .'</li>'.
+        '<li>'. t('If you provide only the path (e.g. "admin/content/node"), it is considered an
+          internal link.') .'</li>'.
+      '</ul>',
+    '#default_value' => $edit->href,
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
   );
   return $form;
 }
+
 
 /**
  * Saves information about a badge into the database
@@ -588,11 +693,19 @@ function user_badges_save_badge($edit) {
   $edit = (object)$edit;
   if (isset($edit->bid) && preg_match("/^[0-9]+$/D", $edit->bid)) {
     db_query('DELETE FROM {user_badges_badges} WHERE bid = %d', $edit->bid);
-    $result = db_query("INSERT INTO {user_badges_badges} (bid, name, image, weight) VALUES (%d, '%s', '%s', %d)", $edit->bid, $edit->name, $edit->image, $edit->weight);
+    $result = db_query("
+      INSERT INTO {user_badges_badges} (bid, name, image, weight, href)
+      VALUES (%d, '%s', '%s', %d, '%s')",
+      $edit->bid, $edit->name, $edit->image, $edit->weight, trim($edit->href)
+    );
     drupal_set_message('Edited image');
   }
   else {
-    $result = db_query("INSERT INTO {user_badges_badges} (name, image, weight) VALUES ('%s', '%s', %d)", $edit->name, $edit->image, $edit->weight);
+    $result = db_query("
+      INSERT INTO {user_badges_badges} (name, image, weight, href)
+      VALUES ('%s', '%s', %d, '%s')",
+      $edit->name, $edit->image, $edit->weight, trim($edit->href)
+    );
     drupal_set_message('Inserted new image');
   }
   if ($result) {
@@ -603,6 +716,7 @@ function user_badges_save_badge($edit) {
   }
   return 'admin/user/user_badges';
 }
+
 
 function user_badges_delete_form($form_state, $bid) {
   if ($badge = user_badges_get_badge($bid)) {
@@ -623,6 +737,7 @@ function user_badges_delete_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/user/user_badges';
 }
 
+
 function user_badges_image_selects() {
   $selects = array();
   $dir = file_create_path('badges');
@@ -634,15 +749,14 @@ function user_badges_image_selects() {
   return $selects;
 }
 
+
 /**
  * Returns an array where keys are role ids (rid) and values are badge ids (bid)
  * These values are assigned on admin/user/user_badges/roles
  *
- * @param
- * $rid - if set, return only value for this role
+ * @param $rid - if set, return only value for this role
  *
- * @return
- * a list of roles
+ * @return a list of roles
  */
 function user_badges_get_roles($rid = NULL) {
   $roles = array();
@@ -659,6 +773,7 @@ function user_badges_get_roles($rid = NULL) {
   return $roles;
 }
 
+
 /**
  * Save information about roles for user_badges (in settings)
  */
@@ -670,12 +785,22 @@ function user_badges_save_roles($roles) {
     foreach ($roles as $rid => $bid) {
       if ($bid) {
         $success = $success && db_query('INSERT INTO {user_badges_roles} (rid, bid) VALUES (%d, %d)', $rid, $bid);
+        // Blocked user (represented as `rid 0«) has no entry in the users_role table
+        if ($rid == 0) {
+          $success = $success && db_query("
+            INSERT INTO {user_badges_user} (uid, bid, type) 
+            SELECT uid, %d, 'role' FROM {users} WHERE status = 0", $bid);
+        }
         // Authenticated user, rid 2 has no entry in the users_role table
         if ($rid == 2) {
-          $success = $success && db_query("INSERT INTO {user_badges_user} (uid, bid, type) (SELECT uid, %d, 'role' FROM {users} WHERE uid > 0)", $bid);
+          $success = $success && db_query("
+            INSERT INTO {user_badges_user} (uid, bid, type) 
+            (SELECT uid, %d, 'role' FROM {users} WHERE uid > 0)", $bid);
         }
         else {
-          $success = $success && db_query("INSERT INTO {user_badges_user} (uid, bid, type) (SELECT uid, %d, 'role' FROM {users_roles} WHERE rid=%d)", $bid, $rid);
+          $success = $success && db_query("
+            INSERT INTO {user_badges_user} (uid, bid, type) 
+            (SELECT uid, %d, 'role' FROM {users_roles} WHERE rid=%d)", $bid, $rid);
         }
       }
     }
@@ -688,14 +813,13 @@ function user_badges_save_roles($roles) {
   }
 }
 
+
 /**
  * Returns HTML representation of user badges for given uid
- *   @param $uid
- *     the user id
- *   @param $refresh (FALSE)
- *     when TRUE, refreshes the cache for $uid
- *   @return string
- *     html representation of userbadges
+ *   @param $uid the user id
+ *   @param $refresh (FALSE) when TRUE, refreshes the cache for $uid
+ *
+ *   @return string html representation of userbadges
  */
 function user_badges_for_uid($uid, $refresh = FALSE) {
   static $cache;
@@ -714,6 +838,7 @@ function user_badges_for_uid($uid, $refresh = FALSE) {
   }
 }
 
+
 /**
  * Returns HTML representation of user badges for given user
  * $array is array defining criteria for user_load()
@@ -730,6 +855,7 @@ function user_badges_for_user($array) {
   }
 }
 
+
 /**
  * Return html representation of a group of badges
  * $badgeimages is an array of badge image tags from theme_user_badge()
@@ -740,13 +866,21 @@ function theme_user_badge_group($badgeimages) {
   }
 }
 
+
 /**
  * Return html representation of a badge image
  * (note: theme_image does the check_plaining)
  */
 function theme_user_badge($badge) {
-  return theme('image', $badge->image, $badge->name, $badge->name);
+  $image = theme('image', $badge->image, $badge->name, $badge->name);
+  if ($badge->href != "") {
+    return l($image, $badge->href, array('html' => TRUE));
+  }
+  else {
+    return $image;
+  }
 }
+
 
 /**
  *  Implementation of hook_views_api().
@@ -756,6 +890,7 @@ function user_badges_views_api() {
     'api' => 2.0,
   );
 }
+
 
 /**
 * Implementation of hook_action_info().
@@ -780,6 +915,7 @@ function user_badges_action_info() {
     ),
   );
 }
+
 
 /**
 * Implementation of a Drupal action.
@@ -810,6 +946,7 @@ function user_badges_add_badge_action(&$account, $context = array()) {
   }
 }
 
+
 function user_badges_add_badge_action_form($context) {
   $form['badges'] = array('#tree' => TRUE);
 
@@ -838,6 +975,7 @@ function user_badges_add_badge_action_submit($form, $form_state) {
   }
   return array('badges' => $badges);
 }
+
 
 /**
 * Implementation of a Drupal action.
@@ -868,6 +1006,7 @@ function user_badges_remove_badge_action(&$account, $context = array()) {
   }
 }
 
+
 function user_badges_remove_badge_action_form($context) {
   $form['badges'] = array('#tree' => TRUE);
 
@@ -887,6 +1026,7 @@ function user_badges_remove_badge_action_form($context) {
   return $form;
 }
 
+
 function user_badges_remove_badge_action_submit($form, $form_state) {
   $badges = array();
   foreach ($form_state['values']['badges'] as $badge => $set) {
@@ -895,4 +1035,41 @@ function user_badges_remove_badge_action_submit($form, $form_state) {
     }
   }
   return array('badges' => $badges);
+}
+
+
+function user_badges_settings_form() {
+  $form['showone'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Only show the most highest-level badge'),
+    '#default_value' => variable_get('user_badges_showone', 0),
+    '#description' => t('If this is checked, only the badge with the lightest weight will be shown.') .'<br/>'. 
+      t('Note that if multiple badges have the same lightest weight, only one of them will appear 
+      (first by alphabetical order).'),
+  );
+  $form['showblocked'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Only show blocked user badge'),
+    '#default_value' => variable_get('user_badges_showblocked', 0),
+    '#description' => t('If checked, only the badge associated to blocked users will be shown, overriding other badges 
+      the user eventually has as well as the preciding options.') .'<br/>'. 
+      t('Note that if there is no badge associated to blocked users, no badges will appear.') .'</br>'.
+      t('This option only acts on blocked users and has no repercussions on active user badges.'),
+  );
+  $form[] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Settings'),
+  ); 
+  return $form;
+}
+
+function user_badges_settings_form_submit($form, $form_state) {
+  variable_set('user_badges_showone', $form_state['values']['showone']);
+  variable_set('user_badges_showblocked', $form_state['values']['showblocked']);
+  
+  $message = ($form_state['values']['showone'] ? t('Only the most highest-level user badge will be shown.') : 
+    t('All user badges will be shown.')) .' '. ($form_state['values']['showblocked'] ? t('Blocked users only will 
+    have blocked user badge displayed.') : '');
+   
+  drupal_set_message($message);
 }
