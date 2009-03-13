@@ -84,10 +84,6 @@ function user_badges_schema() {
       ),
     ),
     'primary key' => array('bid', 'nid'),
-    'indexes' => array(
-      'bid_nid' => array('bid', 'nid'),
-      'nid_bid' => array('nid', 'bid'),
-    ),
   );
   $schema['user_badges_roles'] = array(
     'description' => 'Holds the user badge images',
@@ -106,10 +102,6 @@ function user_badges_schema() {
       ),
     ),
     'primary key' => array('bid', 'rid'),
-    'indexes' => array(
-      'bid_nid' => array('bid', 'rid'),
-      'nid_bid' => array('rid', 'bid'),
-    ),
   );
   $schema['user_badges_user'] = array(
     'description' => 'Holds the user badge images',
@@ -136,7 +128,6 @@ function user_badges_schema() {
     ),
     'primary key' => array('bid', 'uid', 'type'),
     'indexes' => array(
-      'bid_uid_type' => array('bid', 'uid', 'type'),
       'uid_bid' => array('uid', 'bid'),
       'type' => array('type'),
     ),
@@ -192,5 +183,15 @@ function user_badges_update_6100() {
   $ret = array();
   db_add_field($ret, 'user_badges_badges', 'href', 
     array('type' => 'varchar', 'length' => 80, 'not null' => FALSE, 'default' => ''));
+  return $ret;
+}
+
+function user_badges_update_6101() {
+  $ret = array();
+  db_drop_index($ret, 'user_badges_product', 'bid_nid');
+  db_drop_index($ret, 'user_badges_product', 'nid_bid');
+  db_drop_index($ret, 'user_badges_roles', 'bid_nid');
+  db_drop_index($ret, 'user_badges_roles', 'nid_bid');
+  db_drop_index($ret, 'user_badges_user', 'bid_uid_type');
   return $ret;
 }
