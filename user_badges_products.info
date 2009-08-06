@@ -1,8 +1,9 @@
 ; $Id$
+
 name = User Product Badges
 description = Enables assignment of graphical badges to users and roles.
 dependencies[] = user_badges
-dependencies[] = product
+dependencies[] = ec_product
 
 ; Information added by drupal.org packaging script on 2007-06-19
 version = "6.x-1.x-dev"

@@ -11,6 +11,7 @@
  * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
  * @author Heine Deelstra (Heine), http://drupal.org/user/17943
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
+ * @author Richard Skinner (Likeless), http://drupal.org/user/310635
  *
  * @warning For more information on licensing, read the LICENCE.txt file.
  *
@@ -445,7 +446,7 @@ function user_badges_images_form_validate($form, &$form_state) {
     $is_writable = file_check_directory($dir, 1);
     if ($is_writable) {
       $validators = array(
-        'file_validate_extensions' => array('png jpg jpeg'),
+        'file_validate_extensions' => array('png jpg jpeg gif'),
       );
       if ($file = file_save_upload('upload', $validators, $dir)) {
         if (!image_get_info($file->filepath)) {
@@ -1076,7 +1077,7 @@ function user_badges_settings_form_submit($form, $form_state) {
 
 /**
 * Implementation of hook_cron()
-* UNCOMMENT in order to get User Badges to work algon with Auto Assign Role
+* UNCOMMENT in order to get User Badges to work along with Auto Assign Role
 * notes: - this is a quite fast solution in order to solve Auto Assign Role issue
 *        - do not forget to set up your cron
 */
