@@ -47,9 +47,9 @@ function user_badges_products_menu() {
 function user_badges_products_form($form_state) {
   $products = user_badges_products_get_product_list();
   $badges = user_badges_products_get_products();
-  $selects = array(''=>'inactive') + user_badges_get_badges('select');
+  $selects = array('' => 'inactive') + user_badges_get_badges('select');
   $form['products'] = array('#tree' => TRUE);
-  foreach($products as $key => $val) {
+  foreach ($products as $key => $val) {
       $form['products'][$key] = array(
         '#type' => 'select',
         '#title' => $val->title,

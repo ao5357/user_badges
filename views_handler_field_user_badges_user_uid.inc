@@ -1,6 +1,7 @@
 <?php
 // $Id$
 /**
+ * @file
  * A handler to provide proper displays for user badges.
  *
  * Currently displays the badges returned from the user search.

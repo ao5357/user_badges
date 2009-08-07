@@ -12,6 +12,7 @@
  * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
  * @author Heine Deelstra (Heine), http://drupal.org/user/17943
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
+ * @author Richard Skinner (Likeless), http://drupal.org/user/310635
  *
  * @warning For more information on licensing, read the LICENCE.txt file.
  *
@@ -23,7 +24,7 @@
 function user_badges_schema() {
   $schema = array();
   $schema['user_badges_badges'] = array(
-    'description' => 'Holds the user badge images',
+    'description' => 'Defines the user badges themselves (image, weight etc.)',
     'fields' => array(
       'bid' => array(
         'description' => t('Original badge ID'),
@@ -65,37 +66,17 @@ function user_badges_schema() {
       'weight_name' => array('weight', 'name'),
     )
   );
-  $schema['user_badges_product'] = array(
-    'description' => 'Holds the user badge images',
-    'fields' => array(
-      'bid' => array(
-        'description' => t('Original badge ID'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0
-      ),
-      'nid' => array(
-        'description' => t('Node ID'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
-    'primary key' => array('bid', 'nid'),
-  );
   $schema['user_badges_roles'] = array(
-    'description' => 'Holds the user badge images',
+    'description' => 'Stores which roles grant which badges.',
     'fields' => array(
       'rid' => array(
-        'description' => t('Original role ID'),
+        'description' => t('Role ID'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'bid' => array(
-        'description' => t('Original badge ID'),
+        'description' => t('Badge ID'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -104,22 +85,22 @@ function user_badges_schema() {
     'primary key' => array('bid', 'rid'),
   );
   $schema['user_badges_user'] = array(
-    'description' => 'Holds the user badge images',
+    'description' => 'Stores which users have which badges.',
     'fields' => array(
       'uid' => array(
-        'description' => t('Original user ID'),
+        'description' => t('User ID'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'bid' => array(
-        'description' => t('Original badge ID'),
+        'description' => t('Badge ID'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'type' => array(
-        'description' => t('Badge Type'),
+        'description' => t("Whether set as part of the role, or individually assigned ('user', 'role')"),
         'type' => 'varchar',
         'length' => 20,
         'not null' => TRUE,
@@ -163,6 +144,8 @@ function user_badges_uninstall() {
     rmdir($dir);
   }
   drupal_uninstall_schema('user_badges');
+  variable_del('user_badges_showone');
+  variable_del('user_badges_showblocked');
 }
 
 

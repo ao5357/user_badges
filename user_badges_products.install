@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 /**
  * @file
@@ -7,21 +8,52 @@
  * This file contains all the installation functions of the schema, tables and variables 
  * used by the module.
  *
- * @author Jeff Robbins (jjeff), http://drupal.org/user/17190
- * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
- * @author Heine Deelstra (Heine), http://drupal.org/user/17943
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
+ * @author Richard Skinner (Likeless), http://drupal.org/user/310635
  *
  * @warning For more information on licensing, read the LICENCE.txt file.
  *
  */
 
-
-function user_badges_products_install() {
+/**
+ * Implementation of hook_schema()
+ */
+function user_badges_products_schema() {
+  $schema['user_badges_product'] = array(
+    'description' => 'Stores which products grant which badges.',
+    'fields' => array(
+      'bid' => array(
+        'description' => t('Badge ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'nid' => array(
+        'description' => t('Node ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('bid', 'nid'),
+  );
   
+  return $schema;
 }
 
+/**
+ * Implementation of hook_install()
+ */
+function user_badges_products_install() {
+  drupal_install_schema('user_badges_products');
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
 function user_badges_products_uninstall() {
-  
+  drupal_uninstall_schema('user_badges_products');
 }
 
