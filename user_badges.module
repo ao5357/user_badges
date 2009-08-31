@@ -104,6 +104,12 @@ function user_badges_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 5,
   );
+  $items['user_badges/autocomplete'] = array(
+    'title' => t('User Badges Badge Name Autocomplete'),
+    'page callback' => 'user_badges_badge_autocomplete',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
@@ -119,7 +125,15 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
 
     case 'load':
       if ($account->uid > 0) {
-        $account->badges = user_badges_get_badges($account->uid);
+        //Get all user badges for this user, regardless of whether we filter the ones we show.
+        $account->badges_all = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
+        //Now make the array of badges we will show.
+        if (variable_get('user_badges_showone', 0)) {
+          $account->badges = array($account->badges_all[0]);
+        }
+        else {
+          $account->badges = $account->badges_all;
+        }
       }
       break;
 
@@ -162,7 +176,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
         $added = array_diff(array_keys($new_roles), array_keys((array)$account->roles));
         foreach ($added as $rid) {
           // if this role has a badge
-          if (key_exists($rid, $roles) && !key_exists($roles[$rid], $account->badges)) {
+          if (key_exists($rid, $roles) && !key_exists($roles[$rid], $account->badges_all)) {
             $success = user_badges_user_add_badge($account->uid, $roles[$rid], 'role');
             if ($success && $message) {
               drupal_set_message(t('User assigned %name badge.', array('%name' => $badges[$roles[$rid]])));
@@ -174,11 +188,15 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
         $removed = array_diff(array_keys((array)$account->roles), array_keys($new_roles));
         foreach ($removed as $rid) {
           // If this role has a badge and user has this badge..
-          if (key_exists($rid, $roles) && key_exists($roles[$rid], $account->badges)) {
+          if (key_exists($rid, $roles) && key_exists($roles[$rid], $account->badges_all)) {
             $success = user_badges_user_remove_badge($account->uid, $roles[$rid], 'role');
             drupal_set_message(t('%name badge removed from user.', array('%name' => $badges[$roles[$rid]])));
           }
         }
+        
+        //As we may have altered the badges, we need to refresh them in the $account object
+        $account->badges_all = user_badges_get_badges($account->uid);
+        $account->badges_all = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
       }
       break;
 
@@ -222,6 +240,23 @@ function user_badges_theme() {
     ),
   );
   return $themes;
+}
+
+/**
+ * Menu callback; Retrieve a JSON object containing autocomplete suggestions for badges
+ */
+function user_badges_badge_autocomplete($string = '') {
+  $matches = array();
+  
+  if (preg_match('/^[^(]+/',$string,$searchstring)) {
+    $trimstring = trim($searchstring[0]);
+    $result = db_query_range("SELECT name, bid, image, weight FROM {user_badges_badges} WHERE name LIKE '%s%%'", $trimstring, 0, 10);
+    while ($badge = db_fetch_object($result)) {
+      $matches[$badge->name.t(' (Badge ID ').$badge->bid. ')'] = check_plain($badge->name). ' ' .theme('image', $badge->image, $badge->image, $badge->image) ;
+    }
+  }
+
+  drupal_json($matches);
 }
 
 /**
@@ -365,12 +400,15 @@ function user_badges_edit_form_submit($form, &$form_state) {
 /**
  * Return array of user badges where keys are badge ids (bid)
  *   and values are object containing badge info
+ * @param $uid
  * if $uid is a user id, returns badges for that user
  * if $uid is 'all', returns all badges
  * if $uid is 'select', returns badges for form_select options
+ * @param $options array of options
+ * $options['nolimit'] : if TRUE, the limit clause will not be applied for a user
  *   returned values for 'select' are just badge names
  */
-function user_badges_get_badges($uid) {
+function user_badges_get_badges($uid, $options = array()) {
   static $badges, $past_uid;
   if (empty($past_uid) || $past_uid !== $uid) {
     $past_uid = $uid;
@@ -397,16 +435,18 @@ function user_badges_get_badges($uid) {
         );
       }
       else {
-        $limit = variable_get('user_badges_showone', 0) ? ' LIMIT 1 ' : '';
-        $sql = db_query('
+        $query = '
           SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href 
           FROM {user_badges_badges} b
             INNER JOIN {user_badges_user} u ON b.bid = u.bid 
           WHERE u.uid = %d 
           ORDER BY b.weight, b.name
-          %s', 
-          $uid, $limit
-        );
+          ';
+        //Should we limit the badges returned?
+        if ( !$options['nolimit'] && variable_get('user_badges_showone', 0)) {
+          $query .= ' LIMIT 1 ';
+        }
+        $sql = db_query($query, $uid, $limit);
       }
     }
     while ($badge = db_fetch_object($sql)) {
@@ -561,25 +601,32 @@ function user_badges_image_selects() {
 }
 
 /**
- * Returns an array where keys are role ids (rid) and values are badge ids (bid)
+ * Returns an array where keys are role ids (rid) and values are the badge ids (bid) associated with that role
  * These values are assigned on admin/user/user_badges/roles
  *
- * @param $rid - if set, return only value for this role
+ * @param $rid - if set, return only values for this role
  *
+ * @param $options - array of options
+ * $options['returnbadges'] - if TRUE, return badge objects, not just bids
+ * 
  * @return a list of roles
  */
-function user_badges_get_roles($rid = NULL) {
+function user_badges_get_roles($rid = NULL, $options = array()) {
   $roles = array();
   if ($rid) {
-    $sql = db_query('SELECT * FROM {user_badges_roles} WHERE rid = %d', $rid);
+    $sql = db_query('SELECT ubr.rid, ubr.bid, ubb.name, ubb.image, ubb.weight, ubb.href FROM {user_badges_roles} ubr INNER JOIN {user_badges_badges} ubb ON ubb.bid=ubr.bid WHERE ubr.rid = %d', $rid);
   }
   else {
-    $sql = db_query('SELECT * FROM {user_badges_roles}');
+    $sql = db_query('SELECT ubr.rid, ubr.bid, ubb.name, ubb.image, ubb.weight, ubb.href FROM {user_badges_roles} ubr INNER JOIN {user_badges_badges} ubb ON ubb.bid=ubr.bid', $rid);
   }
   while ($row = db_fetch_object($sql)) {
-    $roles[$row->rid] = $row->bid;
+    if ($options['returnbadges']) {
+      $roles[$row->rid] = $row;
+    }
+    else {
+      $roles[$row->rid] = $row->bid;
+    }
   }
-
   return $roles;
 }
 
@@ -588,28 +635,52 @@ function user_badges_get_roles($rid = NULL) {
  */
 function user_badges_save_roles($roles) {
   if (is_array($roles)) {
+    //We have to clear out all badges first
     $success = TRUE;
     db_query('DELETE FROM {user_badges_roles}');
     db_query("DELETE FROM {user_badges_user} WHERE type='role'");
+    
+    //Now we lop through the roles and their badges, and assign them to each user accordingly
     foreach ($roles as $rid => $bid) {
       if ($bid) {
+        //First of all, insert all the role and badge relationship into user_badges_roles
         $success = $success && db_query('INSERT INTO {user_badges_roles} (rid, bid) VALUES (%d, %d)', $rid, $bid);
-        // Blocked user (represented as `rid 0«) has no entry in the users_role table
+        
+        //For all of these queries, we LEFT JOIN user_badges_user to check whether there are existing entries for that badge for 
+        //that user of the "role" type. Otherwise, we get database errors when multiple roles assign the same badge
+        
+        // The blocked user "role" (represented as rid 0) has no entry in the users_role table, so it needs its own special query
         if ($rid == 0) {
           $success = $success && db_query("
             INSERT INTO {user_badges_user} (uid, bid, type) 
-            SELECT uid, %d, 'role' FROM {users} WHERE status = 0", $bid);
+            SELECT u.uid, %d, 'role'
+            FROM {users} u
+            LEFT JOIN {user_badges_user} ubu
+            ON ubu.uid=u.uid AND ubu.bid=%d AND ubu.type='role'
+            WHERE status = 0 AND ubu.uid IS NULL
+          ",$bid, $bid);
         }
-        // Authenticated user, rid 2 has no entry in the users_role table
-        if ($rid == 2) {
+        // The authenticated user role (represented as rid 2) has no entry in the users_role table, so it needs its own special query
+        elseif ($rid == 2) {
           $success = $success && db_query("
             INSERT INTO {user_badges_user} (uid, bid, type) 
-            (SELECT uid, %d, 'role' FROM {users} WHERE uid > 0)", $bid);
+            SELECT u.uid, %d, 'role'
+            FROM {users} u
+            LEFT JOIN {user_badges_user} ubu
+            ON ubu.uid=u.uid AND ubu.bid=%d AND ubu.type='role'
+            WHERE u.uid > 0 AND ubu.uid IS NULL
+          ", $bid, $bid);
         }
+        //For all the normal roles, we want to run this query
         else {
           $success = $success && db_query("
             INSERT INTO {user_badges_user} (uid, bid, type) 
-            (SELECT uid, %d, 'role' FROM {users_roles} WHERE rid=%d)", $bid, $rid);
+            SELECT ur.uid, %d, 'role'
+            FROM {users_roles} ur
+            LEFT JOIN {user_badges_user} ubu
+            ON ubu.uid=ur.uid AND ubu.bid=%d AND ubu.type='role'
+            WHERE ur.rid=%d AND ubu.uid IS NULL
+          ", $bid, $bid, $rid);
         }
       }
     }

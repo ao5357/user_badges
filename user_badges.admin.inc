@@ -183,39 +183,83 @@ function user_badges_image_delete($to_delete) {
  */
 function user_badges_roles_form() {
   $roles = user_roles();
-  $badges = user_badges_get_roles();
-  $selects = array('' => 'inactive') + user_badges_get_badges('select');
+  $badges = user_badges_get_roles(NULL, array('returnbadges' => TRUE));
 
   $form['blocked'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Blocked user badge'),
+    '#title' => t('Blocked Badge'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
     '#tree' => TRUE,
   );
   $form['blocked'][0] = array(
-    '#type' => 'select',
-    '#default_value' => $badges[0],
-    '#options' => $selects,
+    '#type' => 'textfield',
+    '#title' => t('blocked user'),
+    '#size' => 40,
+    '#maxlength' => 255,
+    '#autocomplete_path' => 'user_badges/autocomplete',
+    '#default_value' => isset($badges[0]) ? $badges[0]->name.t(' (Badge ID ').$badges[0]->bid. ')' : '',
+    '#field_suffix' => isset($badges[0]) ? t(' Current: ').theme('image', $badges[0]->image, $badges[0]->image, $badges[0]->image) : '',
   ); 
 
-
-  $form['roles'] = array('#tree' => TRUE);
+  $form['roles'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Role Badges'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => TRUE,
+  );
+    
   foreach ($roles as $rid => $role) {
     if ($rid != 1) { // no badges for the anonymous role
       $form['roles'][$rid] = array(
-        '#type' => 'select',
+        '#type' => 'textfield',
         '#title' => $role,
-        '#default_value' => isset($badges[$rid]) ? $badges[$rid] : '',
-        '#options' => $selects,
+        '#size' => 40,
+        '#maxlength' => 255,
+        '#autocomplete_path' => 'user_badges/autocomplete',
+        '#default_value' => isset($badges[$rid]) ? $badges[$rid]->name.t(' (Badge ID ').$badges[$rid]->bid. ')' : '',
+        '#field_suffix' => isset($badges[$rid]) ? t(' Current: ').theme('image', $badges[$rid]->image, $badges[$rid]->image, $badges[$rid]->image) : '',
       );
     }
   }
   $form[] = array(
     '#type' => 'submit',
-    '#value' => t('Save Roles'),
+    '#value' => t('Save Role Badges'),
   );
   return $form;
+}
+
+/**
+ * validation function for user_badges_roles_form
+ */
+function user_badges_roles_form_validate($form, &$form_state) {
+  $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
+  //Go through all the entries and make sure they all have a valid badge ID
+  foreach ($array as $field => $value) {
+    if (!empty($value)) {
+      //The field isn't empty, so it should match this pattern
+      if (!preg_match('/\('.t('Badge ID').' (\d+)\)/',$value,$matches)) {
+        if ($field == 0) {
+          form_set_error('blocked]['.$field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value'=> $value)));
+        }
+        else {
+          form_set_error('roles]['.$field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value'=> $value)));
+        }
+      }
+      else {
+        //The format was correct, but we need to check the bid exists
+        if (!db_result(db_query('SELECT COUNT(*) FROM {user_badges_badges} b WHERE b.bid=%d', $matches[1]))) {
+          if ($field == 0) {
+            form_set_error('blocked]['.$field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value'=> $matches[1])));
+          }
+          else {
+            form_set_error('roles]['.$field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value'=> $matches[1])));
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -223,6 +267,10 @@ function user_badges_roles_form() {
  */
 function user_badges_roles_form_submit($form, &$form_state) {
   $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
+  foreach ($array as $field => $value) {
+    //We now have a string as our badge, so just extract the bid
+    preg_match('/\('.t('Badge ID').' (\d+)\)/',$value,$matches)
+  }
   user_badges_save_roles($array);
 }
 
