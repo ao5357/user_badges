@@ -61,8 +61,7 @@ class views_handler_field_user_badges_user_uid extends views_handler_field {
   
   //Our options form
   function options_form(&$form, &$form_state) {
-    
-    $options = parent::option_definition();
+    parent::options_form($form, $form_state);
     
     $form['appearance'] = array(
       '#title' => t('Appearance'),
@@ -75,7 +74,7 @@ class views_handler_field_user_badges_user_uid extends views_handler_field {
         'custom_theme' => t('Custom Theme'),
       ),
       '#default_value' => $this->options['appearance'],
-      '#weight' => 0,
+      '#weight' => -3,
     );
     
     $form['seperator'] = array(
@@ -85,7 +84,7 @@ class views_handler_field_user_badges_user_uid extends views_handler_field {
       '#default_value' => $this->options['seperator'],
       '#size' => 6, 
       '#maxlength' => 128,
-      '#weight' => 1,
+      '#weight' => -2,
     );
     
     $form['theme'] = array(
@@ -94,7 +93,7 @@ class views_handler_field_user_badges_user_uid extends views_handler_field {
       '#type' => 'textfield',
       '#default_value' => $this->options['theme'],
       '#maxlength' => 128,
-      '#weight' => 2,
+      '#weight' => -1,
     );
     
   }
