@@ -195,7 +195,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
         }
         
         //As we may have altered the badges, we need to refresh them in the $account object
-        $account->badges_all = user_badges_get_badges($account->uid);
+        $account->badges = user_badges_get_badges($account->uid);
         $account->badges_all = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
       }
       break;
