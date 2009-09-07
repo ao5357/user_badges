@@ -137,6 +137,21 @@ function user_badges_views_data() {
     ),
   );
   
+  // Information for processing badges weights
+  $data['user_badges_badges']['weight'] = array(
+    'title' => t('Badge Weight'),
+    'help' => t('The weight of the badge, as defined on the user badges settings page.'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
   $data['user_badges_badges']['badge'] = array(
     'title' => t('Badge'),
     'real field' => 'bid',
