@@ -17,6 +17,132 @@
  *
  */
 
+
+/**
+ * Form builder; list of badges
+ */
+function user_badges_badgelist_form() {
+  
+  // load the badges that we want to display
+  $form['header'] = array('#type' => 'value', '#value' => array(
+    array('data' => t('Name'), 'field' => 'name'),
+    array('data' => t('Badge')),
+    array('data' => t('Weight'), 'field' => 'weight', 'sort' => 'asc'),
+    array('data' => t('Edit')),
+    array('data' => t('Delete'))
+  ));
+  
+  $result = pager_query('SELECT bid, name, image, weight, href FROM {user_badges_badges} ubb '. tablesort_sql($form['header']['#value']), 50 );
+
+  // build a table listing the appropriate badges
+  while ($badge = db_fetch_object($result)) {
+    $form['name'][$badge->bid] = array('#value' => check_plain($badge->name));
+    $form['badge'][$badge->bid] = array('#value' => theme('user_badge', $badge));
+    $form['weight'][$badge->bid] = array('#type' => 'textfield', '#size' => 4, '#maxlength' => 255, '#default_value' => $badge->weight );
+    $form['edit'][$badge->bid] = array('#value' => l(t('edit'), 'admin/user/user_badges/edit/'. $badge->bid));
+    $form['delete'][$badge->bid] = array('#value' => l(t('delete'), 'admin/user/user_badges/delete/'. $badge->bid));
+  }
+  
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Update'));
+  
+  $form['pager'] = array('#value' => theme('pager', NULL, 50, 0));
+  
+  return $form;
+}
+
+/**
+ * Validate user_badges_badgelist_form form submissions.
+ *
+ * All weights should be numeric
+ */
+function user_badges_badgelist_form_validate($form, &$form_state) {
+  if (isset($form['weight']) && is_array($form['weight'])) {
+    foreach (element_children($form['weight']) as $bid) {
+      if (!is_numeric($form_state['values'][$bid])) {
+        form_set_error($bid, t('All weight values must be numeric.'));
+      }
+    }
+  }
+}
+
+/**
+ * Process user_badges_badgelist_form form submissions.
+ *
+ * Update the badge weights
+ */
+function user_badges_badgelist_form_submit($form, &$form_state) {
+  if (isset($form['weight']) && is_array($form['weight'])) {
+    foreach (element_children($form['weight']) as $bid) {
+      db_query("UPDATE {user_badges_badges} SET weight = %d WHERE bid = %d",
+      $form_state['values'][$bid],
+      $bid
+      );
+    }
+    drupal_set_message(t('The badge weights have been updated.'));
+  }
+}
+
+
+
+/**
+ * Theme the badge list form.
+ *
+ * @param $form
+ *   An associative array containing the structure of the form.
+ * @ingroup themeable
+ */
+function theme_user_badges_badgelist_form($form) {
+  
+  //Loop through the array items in the name array to get all the bids for our listed badges
+  if (isset($form['name']) && is_array($form['name'])) {
+    foreach (element_children($form['name']) as $key) {
+      //We only want bids as values of $key
+      if (!is_numeric($key)) {
+        continue;
+      }
+      
+      //Create the rows array for the table theme
+      $row = array();
+      $row[] = drupal_render($form['name'][$key]);
+      $row[] = drupal_render($form['badge'][$key]);
+      $row[] = drupal_render($form['weight'][$key]);
+      $row[] = drupal_render($form['edit'][$key]);
+      $row[] = drupal_render($form['delete'][$key]);
+      $rows[] = $row;
+    }
+    
+    //Add the submit button
+    $row = array();
+    $row[] = '';
+    $row[] = '';
+    $row[] = drupal_render($form['submit']);
+    $row[] = '';
+    $row[] = '';
+    $rows[] = $row;
+    
+  }
+  else {
+    $rows[] = array(array('data' => t('No badges available.'), 'colspan' => '5'));
+  }
+  
+  //Theme all that we have processed so far into a table
+  $output .= theme('table', $form['header']['#value'], $rows);
+  
+  //Create the table's pager
+  if ($form['pager']['#value']) {
+    $output .= drupal_render($form['pager']);
+  }
+  
+  //Render any remaining form elements
+  $output .= drupal_render($form);
+  
+  return $output;
+}
+
+
+
+
+
 /**
  * Page callback for the main user badges admin page
  */
@@ -184,7 +310,7 @@ function user_badges_image_delete($to_delete) {
 function user_badges_roles_form() {
   $roles = user_roles();
   $badges = user_badges_get_roles(NULL, array('returnbadges' => TRUE));
-
+  
   $form['blocked'] = array(
     '#type' => 'fieldset',
     '#title' => t('Blocked Badge'),
@@ -267,9 +393,11 @@ function user_badges_roles_form_validate($form, &$form_state) {
  */
 function user_badges_roles_form_submit($form, &$form_state) {
   $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
-  foreach ($array as $field => $value) {
+  foreach ($array as $field => &$value) {
     //We now have a string as our badge, so just extract the bid
-    preg_match('/\('.t('Badge ID').' (\d+)\)/',$value,$matches)
+    preg_match('/\('.t('Badge ID').' (\d+)\)/',$value,$matches);
+    //Transform our value into just the bid
+    $value = $matches[1];
   }
   user_badges_save_roles($array);
 }

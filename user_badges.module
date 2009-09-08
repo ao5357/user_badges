@@ -64,6 +64,14 @@ function user_badges_menu() {
     'weight' => -10,
     'file' => 'user_badges.admin.inc',
   );
+  $items['admin/user/user_badges/badgelist'] = array(
+    'title' => 'List',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('user_badges_badgelist_form'),
+    'access arguments' => $access,
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'user_badges.admin.inc',
+  );
   $items['admin/user/user_badges/images'] = array(
     'title' => 'Images',
     'page callback' => 'drupal_get_form',
@@ -228,18 +236,17 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
  * Implementation of hook_theme().
  */
 function user_badges_theme() {
-  $themes = array();
-  $themes['user_badge'] = array(
-    'arguments' => array(
-      'badge' => NULL,
+  return array(
+    'user_badge' => array(
+      'arguments' => array('badge' => NULL),
+    ),
+    'user_badge_group' => array(
+      'arguments' => array('badgeimages' => array()),
+    ),
+    'user_badges_badgelist_form' => array(
+      'arguments' => array('form' => NULL),
     ),
   );
-  $themes['user_badge_group'] = array(
-    'arguments' => array(
-      'badgeimages' => array(),
-    ),
-  );
-  return $themes;
 }
 
 /**
@@ -632,6 +639,9 @@ function user_badges_get_roles($rid = NULL, $options = array()) {
 
 /**
  * Save information about roles for user_badges (in settings)
+ * 
+ * @param $roles
+ *   An array in the format rid => bid for each role/badge relationship.
  */
 function user_badges_save_roles($roles) {
   if (is_array($roles)) {
@@ -640,7 +650,7 @@ function user_badges_save_roles($roles) {
     db_query('DELETE FROM {user_badges_roles}');
     db_query("DELETE FROM {user_badges_user} WHERE type='role'");
     
-    //Now we lop through the roles and their badges, and assign them to each user accordingly
+    //Now we loop through the roles and their badges, and assign them to each user accordingly
     foreach ($roles as $rid => $bid) {
       if ($bid) {
         //First of all, insert all the role and badge relationship into user_badges_roles
