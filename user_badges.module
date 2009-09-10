@@ -40,7 +40,7 @@ function user_badges_help($path, $arg) {
  * Implementation of hook_perm().
  */
 function user_badges_perm() {
-  return array('manage badges');
+  return array('manage badges', 'change badge assignments');
 }
 
 /**
@@ -118,7 +118,7 @@ function user_badges_menu() {
     'title' => 'Badges',
     'page callback' => 'user_badges_page',
     'page arguments' => array(1),
-    'access arguments' => $access,
+    'access arguments' => array('change badge assignments'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 5,
   );
@@ -243,11 +243,11 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
       break;
 
     case 'view':
-      $badgeimgs = array();
-      foreach ($account->badges as $badge) {
-        $badgeimgs[] = theme('user_badge', $badge);
-      }
-      if (!empty($badgeimgs)) {
+      if (is_array($account->badges) && count($account->badges)) {
+        $badgeimgs = array();
+        foreach ($account->badges as $badge) {
+          $badgeimgs[] = theme('user_badge', $badge);
+        }
         $account->content['user_badges'] = array(
           '#type' => 'user_profile_category',
           '#title' => t('Badges'),
@@ -259,7 +259,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
         );
         
         //Is the user viewing their own account?
-        if ($user->uid == $account->uid) {
+        if ($user->uid == $account->uid || user_access('change badge assignments')) {
           //If we allow user weighting of their own badges, we need to build a badge reweighting form
           if (variable_get('user_badges_userweight', 0)) {
             $account->content['user_badges_userweight'] = array(
@@ -444,8 +444,12 @@ function user_badges_badge_autocomplete($string = '') {
  * @param $value
  *   The textfield value
  * 
- * @return
- *   the bid for a valid result (integer)
+ * @return array($bid,$result)
+ * $bid
+ *   the bid detected in the string (integer)
+ *   for an invalid string, this will be NULL
+ * $result
+ *   'valid' for a valid string with a real bid
  *   'string' for an incorrectly formatted string
  *   'nobid' for a correctly formatted string with an invalid badge ID
  */
@@ -453,17 +457,17 @@ function user_badges_badge_autocomplete_validation($value) {
   if (preg_match('/\('. t('Badge ID') .' (\d+)\)/', $value, $matches)) {
     //The format was correct, but we need to check the bid exists
     if (db_result(db_query('SELECT COUNT(*) FROM {user_badges_badges} b WHERE b.bid=%d', $matches[1]))) {
-      //Resulkt found - return the bid
-      return $matches[1];
+      //Result found
+      return array($matches[1],'valid');
     }
     else {
       //No result found, return the error code
-      return 'nobid';
+      return array($matches[1],'nobid');
     }
   }
   else {
       //Pattern does not match, return the error code
-      return 'string';
+      return array(NULL,'string');
   }
 }
 
@@ -536,9 +540,10 @@ function user_badges_change_form(&$form_state, $account) {
 function user_badges_change_form_validate($form, &$form_state) {
   for ($i = 1; $i <= 5; $i++) {
     if (!empty($form_state['values']['add'. $i])) {
-      switch (user_badges_badge_autocomplete_validation($form_state['values']['add'. $i])) {
+      $validation = user_badges_badge_autocomplete_validation($form_state['values']['add'. $i]);
+      switch ($validation[1]) {
         case 'nobid':
-          form_set_error('add'. $i, t('"@value" does not contain a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $form_state['values']['add'. $i])));
+          form_set_error('add'. $i, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $validation[0])));
           break;
         case 'string':
           form_set_error('add'. $i, t('"@value" is not a valid badge. Try using the autocomplete function (requires javascript).', array('@value' => $form_state['values']['add'. $i])));
@@ -559,7 +564,8 @@ function user_badges_change_form_submit($form, &$form_state) {
   //Add badges for non-empty fields
   for ($i = 1; $i <= 5; $i++) {
     if (!empty($form_state['values']['add'. $i])) {
-      user_badges_user_add_badge($uid, user_badges_badge_autocomplete_validation($form_state['values']['add'. $i]), 'user');
+      $validation = user_badges_badge_autocomplete_validation($form_state['values']['add'. $i]);
+      user_badges_user_add_badge($uid, $validation[0], 'user');
     }
   }
   

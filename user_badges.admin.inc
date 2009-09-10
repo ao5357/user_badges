@@ -493,8 +493,10 @@ function user_badges_roles_form_validate($form, &$form_state) {
   //Go through all the entries and make sure they all have a valid badge ID
   foreach ($array as $field => $value) {
     if (!empty($value)) {
-      //The field isn't empty, so it should match this pattern
-      if (!preg_match('/\('. t('Badge ID') .' (\d+)\)/', $value, $matches)) {
+      //The field isn't empty, so we should validate it
+      $validation = user_badges_badge_autocomplete_validation($value);
+      //Is it correctly formatted?
+      if ($validation[1] == 'string') {
         if ($field == 0) {
           form_set_error('blocked]['. $field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value' => $value)));
         }
@@ -502,15 +504,13 @@ function user_badges_roles_form_validate($form, &$form_state) {
           form_set_error('roles]['. $field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value' => $value)));
         }
       }
-      else {
-        //The format was correct, but we need to check the bid exists
-        if (!db_result(db_query('SELECT COUNT(*) FROM {user_badges_badges} b WHERE b.bid=%d', $matches[1]))) {
-          if ($field == 0) {
-            form_set_error('blocked]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $matches[1])));
-          }
-          else {
-            form_set_error('roles]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $matches[1])));
-          }
+      //The format was correct, but we need to check the bid exists
+      elseif ($validation[1] == 'nobid') {
+        if ($field == 0) {
+          form_set_error('blocked]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $validation[0])));
+        }
+        else {
+          form_set_error('roles]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $validation[0])));
         }
       }
     }
