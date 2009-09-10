@@ -429,9 +429,9 @@ function user_badges_badge_autocomplete($string = '') {
   
   if (preg_match('/^[^(]+/', $string, $searchstring)) {
     $trimstring = trim($searchstring[0]);
-    $result = db_query_range("SELECT name, bid, image, weight FROM {user_badges_badges} WHERE name LIKE '%s%%'", $trimstring, 0, 10);
+    $result = db_query_range("SELECT * FROM {user_badges_badges} WHERE name LIKE '%s%%'", $trimstring, 0, 10);
     while ($badge = db_fetch_object($result)) {
-      $matches[$badge->name . t(' (Badge ID ') . $badge->bid .')'] = check_plain($badge->name) .' '. theme('image', $badge->image, $badge->image, $badge->image) ;
+      $matches[$badge->name . t(' (Badge ID ') . $badge->bid .')'] = check_plain($badge->name) .' '. theme('user_badge', $badge);
     }
   }
 
@@ -439,45 +439,144 @@ function user_badges_badge_autocomplete($string = '') {
 }
 
 /**
+ * Validates submissions for textfields that use user_badges_badge_autocomplete strings
+ * 
+ * @param $value
+ *   The textfield value
+ * 
+ * @return
+ *   the bid for a valid result (integer)
+ *   'string' for an incorrectly formatted string
+ *   'nobid' for a correctly formatted string with an invalid badge ID
+ */
+function user_badges_badge_autocomplete_validation($value) {
+  if (preg_match('/\('. t('Badge ID') .' (\d+)\)/', $value, $matches)) {
+    //The format was correct, but we need to check the bid exists
+    if (db_result(db_query('SELECT COUNT(*) FROM {user_badges_badges} b WHERE b.bid=%d', $matches[1]))) {
+      //Resulkt found - return the bid
+      return $matches[1];
+    }
+    else {
+      //No result found, return the error code
+      return 'nobid';
+    }
+  }
+  else {
+      //Pattern does not match, return the error code
+      return 'string';
+  }
+}
+
+
+/**
  * Define the page on user/uid/badges.
  */
 function user_badges_page($account) {
   drupal_set_title(t('Edit badges for %user_name', array('%user_name' => $account->name)));
-
-  return drupal_get_form('user_badges_page_form', $account);
+  
+  return drupal_get_form('user_badges_change_form', $account);
 }
 
 /**
- * Form to assign badges to users.
+ * Form to change badges of a user
  */
-function user_badges_page_form(&$form_state, $account) {
+function user_badges_change_form(&$form_state, $account) {
   $form = array();
 
-  $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
-  $form['badges'] = array('#tree' => TRUE);
-
-  $badges = user_badges_get_badges('all');
-  foreach ($badges as $badge) {
-    $form['badges'][$badge->bid] = array(
-      '#type' => 'checkbox',
-      '#title' => theme('user_badge', $badge),
-      '#return_value' => 1,
-      '#default_value' => array_key_exists($badge->bid, $account->badges),
-      '#description' => check_plain($badge->name),
+  $form['uid'] = array(
+    '#type' => 'value',
+    '#value' => $account->uid,
+  );
+  $form['add'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Add Badges'),
+    '#weight' => 3,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  for ($i = 1; $i <= 5; $i++) {
+    $form['add']['add'. $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('New Badge !number', array('!number' => $i)),
+      '#size' => 40,
+      '#maxlength' => 255,
+      '#autocomplete_path' => 'user_badges/autocomplete',
     );
   }
-
-  $form[] = array(
+  if (count($account->badges_all)) {
+    $form['remove'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Remove Badges'),
+      '#weight' => 5,
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    foreach ($account->badges_all as $badge) {
+      $form['remove'][$badge->bid] = array(
+        '#type' => 'checkbox',
+        '#title' => theme('user_badge', $badge),
+        '#return_value' => 1,
+        '#default_value' => 0,
+        '#description' => check_plain($badge->name),
+      );
+    }
+  }
+  
+  $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save Badges'),
+    '#value' => t('Update Badges'),
+    '#weight' => 10,
   );
   return $form;
 }
 
-function user_badges_page_form_submit($form, &$form_state) {
-  $badges = $form_state['values']['badges'];
+/**
+ * Validate user_badges_remove_form form submissions.
+ */
+function user_badges_change_form_validate($form, &$form_state) {
+  for ($i = 1; $i <= 5; $i++) {
+    if (!empty($form_state['values']['add'. $i])) {
+      switch (user_badges_badge_autocomplete_validation($form_state['values']['add'. $i])) {
+        case 'nobid':
+          form_set_error('add'. $i, t('"@value" does not contain a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $form_state['values']['add'. $i])));
+          break;
+        case 'string':
+          form_set_error('add'. $i, t('"@value" is not a valid badge. Try using the autocomplete function (requires javascript).', array('@value' => $form_state['values']['add'. $i])));
+          break;
+      }
+    }
+  }
+}
+
+/**
+ * Process user_badges_remove_form form submissions.
+ *
+ * Add the named badge. Remove the checked badges.
+ */
+function user_badges_change_form_submit($form, &$form_state) {
   $uid = $form_state['values']['uid'];
-  user_badges_user_save($badges, $uid, FALSE);
+  
+  //Add badges for non-empty fields
+  for ($i = 1; $i <= 5; $i++) {
+    if (!empty($form_state['values']['add'. $i])) {
+      user_badges_user_add_badge($uid, user_badges_badge_autocomplete_validation($form_state['values']['add'. $i]), 'user');
+    }
+  }
+  
+  //Remove any checked badges
+  $badges_to_go = array();
+  foreach ($form_state['values'] as $bid => $value) {
+    if (is_numeric($bid) && $value == 1) {
+      $badges_to_go[] = $bid;
+    }
+  }
+  if (count($badges_to_go)) {
+    foreach ($badges_to_go as $bid) {
+      user_badges_user_remove_badge($uid, $bid);
+    }
+    drupal_set_message(t('!removalcount badge(s) removed.', array('!removalcount' => count($badges_to_go))));
+  }
+  
 }
 
 /**
@@ -580,7 +679,7 @@ function user_badges_get_badges($uid, $options = array()) {
     $badges = array();
     if ($uid == 'all' || $uid == 'select') {
       $sql = db_query('
-        SELECT b.bid, b.weight, b.name, b.image, b.href ,
+        SELECT b.bid, b.weight, b.name, b.image, b.href,
         b.unhideable, b.fixedweight, b.doesnotcounttolimit
         FROM {user_badges_badges} b 
         ORDER BY b.weight, b.name'
