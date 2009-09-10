@@ -1,5 +1,5 @@
 <?php
-// $Id
+// $Id$
 
 /**
  * @file
@@ -82,8 +82,6 @@ function user_badges_badgelist_form_submit($form, &$form_state) {
   }
 }
 
-
-
 /**
  * Theme the badge list form.
  *
@@ -139,49 +137,180 @@ function theme_user_badges_badgelist_form($form) {
   return $output;
 }
 
-
-
-
+/**
+ * Define the edit form for userbadges.
+ */
+function user_badges_edit_form($form_state, $bid = NULL) {
+  
+  //If we have been given an existing badge (bid) then get all the badge info into $edit
+  if (is_numeric($bid)) {
+    $edit = db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
+    if (is_numeric($edit->bid)) {
+      $form['bid'] = array(
+        '#type' => 'value',
+        '#value' => $edit->bid,
+      );
+    }
+  }
+  
+  //Are we using a library image or an image URL?
+  if ( isset($edit) && valid_url($edit->image, TRUE) ) {
+    $imageurl = $edit->image;
+    $libraryimage = '';
+  }
+  else {
+    $libraryimage = $edit->image;
+    $imageurl = '';
+  }
+  
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#default_value' => isset($edit) ? $edit->name : '',
+    '#size' => 40,
+    '#maxlength' => 100,
+    '#description' => t('Name for the badge. Will be displayed as a tooltip when rolling over the badge.'),
+    '#required' => TRUE,
+  );
+  $form['imageurl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Image URL'),
+    '#default_value' => $imageurl,
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#description' => t('The image URL for this badge. If you want to use an image from the user badges image library, select from the list below.'),
+  );
+  $form['weight'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Weight'),
+    '#size' => 4,
+    '#maxlength' => 10,
+    '#default_value' => isset($edit) ? $edit->weight : 0,
+    '#description' => t('Lighter weighted items float to the top of lists. Heavier items go to the bottom. You must enter a number (negative values are allowed).'),
+    '#required' => TRUE,
+  );
+  $form['href'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Description URL'),
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#description' => t('You can specify here the link where your badge will redirect your user.
+      This is useful for explanation pages about the badge, for instance. If you do not wish 
+      your badge to be clickable, please leave this field empty.') .'<br />'.
+      '<u>'. t('Tips:') .'</u>'.'<ul>'.
+        '<li>'. t('If you provide the full URL, it will be considered an external URL.') .'</li>'.
+        '<li>'. t('If you provide only the path (e.g. "admin/content/node"), it is considered an
+          internal link.') .'</li>'.
+      '</ul>',
+    '#default_value' => $edit->href,
+  );
+  $form['unhideable'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Cannot be Hidden'),
+    '#default_value' => $edit->unhideable,
+    '#description' => t('If this is set, the badge cannot be hidden by being moved down in weight. It will always show up.'),
+  );
+  $form['fixedweight'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Fixed Weight'),
+    '#default_value' => $edit->fixedweight,
+    '#description' => t('If this is set, the badge cannot have a user assigned weight, regardless of settings.'),
+  );
+  $form['doesnotcounttolimit'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Does Not Count to Limit'),
+    '#default_value' => $edit->doesnotcounttolimit,
+    '#description' => t('If this is set, the badge does not count towards the limit for number of badges to display per user.'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  $selects = array('' => t('Use the image URL above instead of a library image.')) + user_badges_image_selects();
+  if (count($selects)) {
+    $form['image'] = array(
+      '#type' => 'radios',
+      '#title' => t('Image Library'),
+      '#default_value' => $libraryimage,
+      '#options' => $selects,
+      '#description' => t('If you have not entered an image URL above, you can select an image from this user badges image library to associate with this badge. You can upload additional images to the library under the <a href="@url">images</a> tab.', array('@url' => url("admin/user/user_badges/images"))),
+    );
+  }
+  else {
+    $form['noimages'] = array(
+      '#type' => 'item',
+      '#title' => t('Image'),
+      '#value' => t('No badge images uploaded.'),
+      '#description' => t('You can enter an image URL directly above, but if you want to instead upload your image to the user badges image library, use <a href="@upload_link">this link</a>. Note that private download is incompatible with this library and should use direct URL entry instead.', array('@upload_link' => url("admin/user/user_badges/images"))),
+    );
+  }
+  $form['submit2'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
 
 /**
- * Page callback for the main user badges admin page
+ * Validate user_badges_edit_form form submissions.
+ *
  */
-function user_badges_settings_page($op = NULL, $bid = NULL) {
-  switch ($op) {
-    case 'edit':
-      if (is_numeric($bid)) {
-        $output = drupal_get_form('user_badges_edit_form', $bid);
-      }
-      break;
-
-    case 'delete' :
-      if (is_numeric($bid)) {
-        $output = user_badges_delete($bid);
-      }
-      break;
-
-    default:
-      $badges = user_badges_get_badges('all');
-      $header = array(t('Name'), t('Image'), t('Operations'));
-      if (is_array($badges)) {
-        foreach ($badges as $badge) {
-          $tablerow[$badge->bid]['name'] = $badge->name;
-          $tablerow[$badge->bid]['image'] = theme('image', $badge->image, $badge->image, $badge->image);
-          $tablerow[$badge->bid]['ops'] = l(t('edit'), 'admin/user/user_badges/edit/'. $badge->bid) .' '. l(t('delete'), 'admin/user/user_badges/delete/'. $badge->bid);
-        }
-      }
-      $output = theme('table', $header, $tablerow, array('style' => 'width:100%'));
-      $output .= "<br/><br/>";
-      $form[] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Add another'),
-      );
-      //$output .= user_badges_edit_form();
-      $output .= drupal_get_form('user_badges_edit_form');
-      break;
+function user_badges_edit_form_validate($form, &$form_state) {
+  //Either a URL or an item from the image library should be selected, but not both
+  if ($form_state['values']['imageurl'] && $form_state['values']['image']) {
+    form_set_error('image', t('You cannot both enter an image URL and select an image from the library too. A badge can only have one image.'));
   }
+  elseif (!$form_state['values']['imageurl'] && !$form_state['values']['image']) {
+    form_set_error('image', t('You need to either enter an image URL or select an image from the library. Your badge needs an image.'));
+  }
+  
+  //The image URL must be a valid url
+  if ($form_state['values']['imageurl'] && !valid_url($form_state['values']['imageurl'], TRUE)) {
+    form_set_error('imageurl', t('This is not a valid image URL. You need to enter a complete image URL, including the "http://" at the start.'));
+  }
+  
+  //Weights must be numeric
+  if (!is_numeric($form_state['values']['weight'])) {
+    form_set_error('weight', t('Your value for the weight must be a number. Negative numbers are allowed, but not decimals.'));
+  }
+  
+}
 
-  return $output;
+/**
+ * Process user_badges_edit_form form submissions.
+ *
+ * Inserts the badge into the DB and sets a success message
+ */
+function user_badges_edit_form_submit($form, &$form_state) {
+  $edit = $form_state['values'];
+  $edit = (object)$edit;
+  
+  $image = $edit->imageurl ? trim($edit->imageurl) : $edit->image;
+  
+  //If the badge already exists, delete it and re-insert it
+  if (isset($edit->bid) && preg_match("/^[0-9]+$/D", $edit->bid)) {
+    db_query('DELETE FROM {user_badges_badges} WHERE bid = %d', $edit->bid);
+    $result = db_query("
+      INSERT INTO {user_badges_badges} (bid, name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit)
+      VALUES (%d, '%s', '%s', %d, '%s', %d, %d, %d)",
+      $edit->bid, trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit
+    );
+  }
+  //If the badge does not already exist, create it anew
+  else {
+    $result = db_query("
+      INSERT INTO {user_badges_badges} (name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit)
+      VALUES ('%s', '%s', %d, '%s', %d, %d, %d)",
+      trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit
+    );
+  }
+  if ($result) {
+    drupal_set_message(t('Badge %badgename saved.', array('%badgename' => $edit->name)));
+  }
+  else {
+    drupal_set_message(t('There was a problem saving the badge information into the database.'));
+  }
+  $form_state['redirect'] = 'admin/user/user_badges';
 }
 
 /**
@@ -324,8 +453,8 @@ function user_badges_roles_form() {
     '#size' => 40,
     '#maxlength' => 255,
     '#autocomplete_path' => 'user_badges/autocomplete',
-    '#default_value' => isset($badges[0]) ? $badges[0]->name.t(' (Badge ID ').$badges[0]->bid. ')' : '',
-    '#field_suffix' => isset($badges[0]) ? t(' Current: ').theme('image', $badges[0]->image, $badges[0]->image, $badges[0]->image) : '',
+    '#default_value' => isset($badges[0]) ? $badges[0]->name . t(' (Badge ID ') . $badges[0]->bid .')' : '',
+    '#field_suffix' => isset($badges[0]) ? t(' Current: ') . theme('image', $badges[0]->image, $badges[0]->image, $badges[0]->image) : '',
   ); 
 
   $form['roles'] = array(
@@ -344,8 +473,8 @@ function user_badges_roles_form() {
         '#size' => 40,
         '#maxlength' => 255,
         '#autocomplete_path' => 'user_badges/autocomplete',
-        '#default_value' => isset($badges[$rid]) ? $badges[$rid]->name.t(' (Badge ID ').$badges[$rid]->bid. ')' : '',
-        '#field_suffix' => isset($badges[$rid]) ? t(' Current: ').theme('image', $badges[$rid]->image, $badges[$rid]->image, $badges[$rid]->image) : '',
+        '#default_value' => isset($badges[$rid]) ? $badges[$rid]->name . t(' (Badge ID ') . $badges[$rid]->bid .')' : '',
+        '#field_suffix' => isset($badges[$rid]) ? t(' Current: ') . theme('image', $badges[$rid]->image, $badges[$rid]->image, $badges[$rid]->image) : '',
       );
     }
   }
@@ -365,22 +494,22 @@ function user_badges_roles_form_validate($form, &$form_state) {
   foreach ($array as $field => $value) {
     if (!empty($value)) {
       //The field isn't empty, so it should match this pattern
-      if (!preg_match('/\('.t('Badge ID').' (\d+)\)/',$value,$matches)) {
+      if (!preg_match('/\('. t('Badge ID') .' (\d+)\)/', $value, $matches)) {
         if ($field == 0) {
-          form_set_error('blocked]['.$field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value'=> $value)));
+          form_set_error('blocked]['. $field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value' => $value)));
         }
         else {
-          form_set_error('roles]['.$field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value'=> $value)));
+          form_set_error('roles]['. $field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value' => $value)));
         }
       }
       else {
         //The format was correct, but we need to check the bid exists
         if (!db_result(db_query('SELECT COUNT(*) FROM {user_badges_badges} b WHERE b.bid=%d', $matches[1]))) {
           if ($field == 0) {
-            form_set_error('blocked]['.$field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value'=> $matches[1])));
+            form_set_error('blocked]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $matches[1])));
           }
           else {
-            form_set_error('roles]['.$field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value'=> $matches[1])));
+            form_set_error('roles]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $matches[1])));
           }
         }
       }
@@ -395,7 +524,7 @@ function user_badges_roles_form_submit($form, &$form_state) {
   $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
   foreach ($array as $field => &$value) {
     //We now have a string as our badge, so just extract the bid
-    preg_match('/\('.t('Badge ID').' (\d+)\)/',$value,$matches);
+    preg_match('/\('. t('Badge ID') .' (\d+)\)/', $value, $matches);
     //Transform our value into just the bid
     $value = $matches[1];
   }
@@ -407,27 +536,48 @@ function user_badges_roles_form_submit($form, &$form_state) {
  */
 function user_badges_settings_form() {
   $form['showone'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Only show the most highest-level badge'),
+    '#type' => 'textfield',
+    '#title' => t('Number of badges to display'),
+    '#size' => 4,
+    '#maxlength' => 4,
     '#default_value' => variable_get('user_badges_showone', 0),
-    '#description' => t('If this is checked, only the badge with the lightest weight will be shown.') .'<br/>'. 
-      t('Note that if multiple badges have the same lightest weight, only one of them will appear 
-      (first by alphabetical order).'),
+    '#description' => t('Only this many badges with the lightest weights will be shown.') .'<br/>'.
+      t('Set to zero to apply no limit.') .'<br/>'. 
+      t('Note that if multiple badges have the same lightest weight, only one of them will appear (first by alphabetical order).'),
   );
   $form['showblocked'] = array(
     '#type' => 'checkbox',
     '#title' => t('Only show blocked user badge'),
     '#default_value' => variable_get('user_badges_showblocked', 0),
     '#description' => t('If checked, only the badge associated to blocked users will be shown, overriding other badges 
-      the user eventually has as well as the preciding options.') .'<br/>'. 
-      t('Note that if there is no badge associated to blocked users, no badges will appear.') .'</br>'.
+      the user eventually has as well as any other settings.') .' <br/>'. 
+      t('Note that if there is no badge associated to blocked users, no badges will appear.') .' <br/>'.
       t('This option only acts on blocked users and has no repercussions on active user badges.'),
+  );
+  $form['userweight'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow users to reorder badges'),
+    '#default_value' => variable_get('user_badges_userweight', 0),
+    '#description' => t('If checked, users will have the ability to reweight their badges in their profile,
+      enabling them to set what order their badges display, and also which badges will display if a limit is set above.') .' <br/>'. 
+      t('Note that you can make individual badges exempt from this function, allowing you to force them to the top or bottom of the 
+      list by giving them a very high or low weight value.') .' <br/>',
   );
   $form[] = array(
     '#type' => 'submit',
     '#value' => t('Save Settings'),
   ); 
   return $form;
+}
+
+/**
+ * validate user_badges_settings_form input
+ */
+function user_badges_settings_form_validate($form, $form_state) {
+  //'showone' must be showone
+  if ( !is_numeric($form_state['values']['showone']) || $form_state['values']['showone'] < 0 ) {
+    form_set_error('showone', t('Must be a positive number.'));
+  }
 }
 
 /**
@@ -438,10 +588,25 @@ function user_badges_settings_form() {
 function user_badges_settings_form_submit($form, $form_state) {
   variable_set('user_badges_showone', $form_state['values']['showone']);
   variable_set('user_badges_showblocked', $form_state['values']['showblocked']);
+  variable_set('user_badges_userweight', $form_state['values']['userweight']);
   
-  $message = ($form_state['values']['showone'] ? t('Only the most highest-level user badge will be shown.') : 
-    t('All user badges will be shown.')) .' '. ($form_state['values']['showblocked'] ? t('Blocked users only will 
-    have blocked user badge displayed.') : '');
-   
-  drupal_set_message($message);
+  drupal_set_message('User badges settings updated.');
 }
+
+/**
+ * Select options for printing a list of images in the image library
+ * 
+ * @return
+ *   An array of images from the image library, in the form $filename => $image_html
+ */
+function user_badges_image_selects() {
+  $selects = array();
+  $dir = file_create_path('badges');
+  $files = file_scan_directory($dir, '.*\.(((J|j)(p|P)(g|G))|((p|P)(n|N)(g|G))|((g|G)(i|I)(f|F)))', array('.', '..', 'CVS'), 0, FALSE);
+  foreach ($files as $file) {
+    $selects[$file->filename] = theme('image', $file->filename, $file->filename, $file->filename);
+  }
+
+  return $selects;
+}
+

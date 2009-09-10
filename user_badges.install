@@ -40,9 +40,9 @@ function user_badges_schema() {
         'default' => '',
       ),
       'image' => array(
-        'description' => t('Associated image'),
+        'description' => t('Associated image. Can be a full URL, or a relative path for the image library.'),
         'type' => 'varchar',
-        'length' => 80,
+        'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
@@ -50,14 +50,35 @@ function user_badges_schema() {
         'description' => t('Order in list'),
         'type' => 'int',
         'not null' => TRUE,
-        'default' => 0
+        'default' => 0,
       ),
       'href' => array(
         'description' => t('Badge description URL'),
         'type' => 'varchar',
-        'length' => 80,
+        'length' => 255,
         'not null' => FALSE,
         'default' => '',
+      ),
+      'unhideable' => array(
+        'description' => t('If this is 1, the badge cannot be hidden by being moved down in weight. It will always show up.'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fixedweight' => array(
+        'description' => t('If this is 1, the badge cannot have a user assigned weight, regardless of settings.'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'doesnotcounttolimit' => array(
+        'description' => t('If this is 1, the badge does not count towards the limit for number of badges to display per user.'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
       ),
     ),
     'primary key' => array('bid'),
@@ -106,10 +127,16 @@ function user_badges_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
-    ),
+      'userweight' => array(
+        'description' => t('Order in list, as set by user.'),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+     ),
     'primary key' => array('bid', 'uid', 'type'),
     'indexes' => array(
       'uid_bid' => array('uid', 'bid'),
+      'uid_weight' => array('uid', 'weight'),
       'type' => array('type'),
     ),
   );
@@ -176,5 +203,28 @@ function user_badges_update_6101() {
   db_drop_index($ret, 'user_badges_roles', 'bid_nid');
   db_drop_index($ret, 'user_badges_roles', 'nid_bid');
   db_drop_index($ret, 'user_badges_user', 'bid_uid_type');
+  return $ret;
+}
+
+function user_badges_update_6102() {
+  $ret = array();
+  
+  //We need to modify href to allow longer image urls
+  if ($GLOBALS['db_type'] == 'mysql') {
+    $ret[] = update_sql("ALTER TABLE {user_badges_badges} CHANGE image image varchar(255) default ''");
+  }
+  else { // pgsql
+   db_change_column($ret, 'user_badges_badges', 'image', 'image', 'varchar(255)', array('not null' => FALSE, 'default' => "''"));
+  }  
+  
+  //Add the new fields for the on/off checkbox settings
+  db_add_field($ret, 'user_badges_badges', 'unhideable', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
+  db_add_field($ret, 'user_badges_badges', 'fixedweight', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
+  db_add_field($ret, 'user_badges_badges', 'doesnotcounttolimit', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
+  
+  //Add the new user weight field
+  db_add_field($ret, 'user_badges_user', 'userweight', array('type' => 'int', 'not null' => FALSE));
+  db_add_index($ret, 'user_badges_user', 'uid_weight', array('uid', 'userweight'));
+  
   return $ret;
 }
