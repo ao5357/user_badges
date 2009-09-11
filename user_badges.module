@@ -25,7 +25,7 @@ function user_badges_help($path, $arg) {
     case 'admin/modules#description':
     
     case 'admin/user/user_badges':
-      return t('User badges are iconic images which can be assigned to users. They can represent accomplishments, status, or anything you\'d like. These badges will show up in the user\'s profile, and could also be used by a theme to appear with user postings on forums, comments, or nodes. Badges can be assigned manually by an administrator by visiting a user\'s profile. They also can be assigned automatically by role or ecommerce purchase (if ecommerce modules are installed). The excellent <a href="http://drupal.org/project/rules">Rules Module</a> can also be used to set and unset badges on a wide variety of conditions.');
+      return t('User badges are iconic images which can be assigned to users. They can represent accomplishments, status, or anything you\'d like. These badges will show up in the user\'s profile, and could also be used by a theme to appear with user postings on forums, comments, or nodes. Badges can be assigned manually by an administrator by visiting a user\'s profile. They also can be assigned automatically by role or ecommerce purchase (if ecommerce modules are installed). The excellent !link module can also be used to set and unset badges on a wide variety of conditions.', array('!link' => l('Rules', 'http://drupal.org/project/rules', array('absolute' => TRUE))));
 
     case 'admin/user/user_badges/roles':
       return t("Select the badge that you'd like to associate with each role.");
@@ -246,7 +246,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
       if (is_array($account->badges) && count($account->badges)) {
         $badgeimgs = array();
         foreach ($account->badges as $badge) {
-          $badgeimgs[] = theme('user_badge', $badge);
+          $badgeimgs[] = theme('user_badge', $badge, $account);
         }
         $account->content['user_badges'] = array(
           '#type' => 'user_profile_category',
@@ -283,7 +283,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
 function user_badges_theme() {
   return array(
     'user_badge' => array(
-      'arguments' => array('badge' => NULL),
+      'arguments' => array('badge' => NULL, 'account' => NULL),
     ),
     'user_badge_group' => array(
       'arguments' => array('badgeimages' => array()),
@@ -332,7 +332,7 @@ function user_badges_userweight_form($form_state, $account) {
     }
     
     $form['name'][$badge->bid] = array('#value' => check_plain($badge->name));
-    $form['badge'][$badge->bid] = array('#value' => theme('user_badge', $badge));
+    $form['badge'][$badge->bid] = array('#value' => theme('user_badge', $badge, $account));
     
     $form['weight'][$badge->bid] = array(
       '#type' => 'weight',
@@ -518,7 +518,7 @@ function user_badges_change_form(&$form_state, $account) {
     foreach ($account->badges_all as $badge) {
       $form['remove'][$badge->bid] = array(
         '#type' => 'checkbox',
-        '#title' => theme('user_badge', $badge),
+        '#title' => theme('user_badge', $badge, $account),
         '#return_value' => 1,
         '#default_value' => 0,
         '#description' => check_plain($badge->name),
@@ -893,7 +893,7 @@ function user_badges_for_uid($uid, $refresh = FALSE) {
     else {
       $user_badges = user_badges_get_badges($uid);
         foreach ((array)$user_badges as $badge) {
-        $badges[] = theme('user_badge', $badge);
+        $badges[] = theme('user_badge', $badge, user_load($uid));
       }
       $cache[$uid] = isset($badges) ? theme('user_badge_group', $badges) : '';
       return $cache[$uid];
@@ -910,7 +910,7 @@ function user_badges_for_uid($uid, $refresh = FALSE) {
 function user_badges_for_user($array) {
   $account = user_load($array);
   foreach ((array)$account->badges as $badge) {
-    $badges[] = theme('user_badge', $badge);
+    $badges[] = theme('user_badge', $badge, $account);
   }
   if ($badges) {
     return theme('user_badge_group', $badges);
@@ -931,7 +931,13 @@ function theme_user_badge_group($badgeimages) {
  * Return html representation of a badge image
  * (note: theme_image does the check_plaining)
  */
-function theme_user_badge($badge) {
+function theme_user_badge($badge, $account = NULL) {
+  //If we haven't been supplied with a user, use whoever is logged in
+  global $user;
+  if (is_null($account)) {
+    $account = $user;
+  }
+  
   //If we have a full image URL, don't require theme_image to get the size (it only breaks)
   if (valid_url($badge->image, TRUE)) {
     $image = theme('image', $badge->image, $badge->name, $badge->name, NULL, FALSE);
@@ -941,7 +947,15 @@ function theme_user_badge($badge) {
   }
   
   if ($badge->href != "") {
-    return l($image, $badge->href, array('html' => TRUE));
+    $href = $badge->href;
+    
+    //Implement token replacement
+    if (module_exists('token')) {
+      $href = token_replace($href, $type = 'userbadge', $object = $badge);
+      $href = token_replace($href, $type = 'user', $object = $account);
+    }
+    
+    return l($image, $href, array('html' => TRUE));
   }
   else {
     return $image;
@@ -1096,6 +1110,30 @@ function user_badges_remove_badge_action_submit($form, $form_state) {
   }
   return array('badges' => $badges);
 }
+
+/**
+ * Implementation of hook_token_values().
+ */
+function user_badges_token_values($type, $object = NULL) {
+  if ($type == 'userbadge') {
+    $badge = $object;
+    $tokens['userbadge-name'] = $badge->name;
+    $tokens['userbadge-bid'] = $badge->bid;
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_token_list().
+ */
+function user_badges_token_list($type = 'all') {
+  if ($type == 'userbadge' || $type == 'all') {
+    $tokens['userbadge']['userbadge-name'] = t("The badge name");
+    $tokens['userbadge']['userbadge-bid'] = t("The badge id number (bid)");
+    return $tokens;
+  }  
+}
+
 
 /**
 * Implementation of hook_cron()

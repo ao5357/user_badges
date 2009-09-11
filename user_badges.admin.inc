@@ -204,6 +204,25 @@ function user_badges_edit_form($form_state, $bid = NULL) {
       '</ul>',
     '#default_value' => $edit->href,
   );
+  
+  //Tokens help
+  if (module_exists('token')) {
+    $form['token_help'] = array(
+      '#title' => t('Replacement patterns'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      );
+    $form['token_help']['help'] = array(
+      '#value' => theme('token_help', array('userbadge','user')),
+      );
+  }
+  else {
+    $form['token_help']['help'] = array(
+      '#value' => t('Install the !link module if you want this URL to include dynamic elements such as badge ID numbers.', array('!link' => l('Token', 'http://drupal.org/project/token', array('absolute' => TRUE)))),
+      );
+  }
+  
   $form['unhideable'] = array(
     '#type' => 'checkbox', 
     '#title' => t('Cannot be Hidden'),
