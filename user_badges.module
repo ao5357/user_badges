@@ -946,8 +946,15 @@ function theme_user_badge($badge, $account = NULL) {
     $image = theme('image', $badge->image, $badge->name, $badge->name);
   }
   
-  if ($badge->href != "") {
-    $href = $badge->href;
+  //We don't link the badge if there is no link and no default, or if the default is overridden
+  if (
+    ($badge->href == "" && !variable_get('user_badges_defaulthref', ''))
+    || strtolower($badge->href) == "<none>"
+  ) {
+    return $image;
+  }
+  else {
+    $href = $badge->href ? $badge->href : variable_get('user_badges_defaulthref', '') ;
     
     //Implement token replacement
     if (module_exists('token')) {
@@ -956,9 +963,6 @@ function theme_user_badge($badge, $account = NULL) {
     }
     
     return l($image, $href, array('html' => TRUE));
-  }
-  else {
-    return $image;
   }
 }
 

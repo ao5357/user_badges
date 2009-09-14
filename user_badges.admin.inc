@@ -201,6 +201,7 @@ function user_badges_edit_form($form_state, $bid = NULL) {
         '<li>'. t('If you provide the full URL, it will be considered an external URL.') .'</li>'.
         '<li>'. t('If you provide only the path (e.g. "admin/content/node"), it is considered an
           internal link.') .'</li>'.
+        '<li>'. t('Use %none to override a default link in the settings tab with no link for this badge.', array('%none' => '<none>')) .'</li>'.
       '</ul>',
     '#default_value' => $edit->href,
   );
@@ -582,6 +583,33 @@ function user_badges_settings_form() {
       t('Note that you can make individual badges exempt from this function, allowing you to force them to the top or bottom of the 
       list by giving them a very high or low weight value.') .' <br/>',
   );
+  $form['defaulthref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default badge link URL'),
+    '#size' => 60,
+    '#maxlength' => 500,
+    '#default_value' => variable_get('user_badges_defaulthref', ''),
+    '#description' => t('Enter a default URL to link all badges to. You can override this for individual badges.'),
+  );
+  
+  //Tokens help
+  if (module_exists('token')) {
+    $form['token_help'] = array(
+      '#title' => t('Replacement patterns'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      );
+    $form['token_help']['help'] = array(
+      '#value' => theme('token_help', array('userbadge','user')),
+      );
+  }
+  else {
+    $form['token_help']['help'] = array(
+      '#value' => t('Install the !link module if you want this URL to include dynamic elements such as badge ID numbers.', array('!link' => l('Token', 'http://drupal.org/project/token', array('absolute' => TRUE)))),
+      );
+  }
+  
   $form[] = array(
     '#type' => 'submit',
     '#value' => t('Save Settings'),
@@ -593,7 +621,7 @@ function user_badges_settings_form() {
  * validate user_badges_settings_form input
  */
 function user_badges_settings_form_validate($form, $form_state) {
-  //'showone' must be showone
+  //'showone' must be numeric
   if ( !is_numeric($form_state['values']['showone']) || $form_state['values']['showone'] < 0 ) {
     form_set_error('showone', t('Must be a positive number.'));
   }
@@ -608,6 +636,10 @@ function user_badges_settings_form_submit($form, $form_state) {
   variable_set('user_badges_showone', $form_state['values']['showone']);
   variable_set('user_badges_showblocked', $form_state['values']['showblocked']);
   variable_set('user_badges_userweight', $form_state['values']['userweight']);
+  //Only set a defaulthref if we have some non-whitespace in there
+  if ( preg_match("/\S/", $form_state['values']['defaulthref']) ) {
+    variable_set('user_badges_defaulthref', $form_state['values']['defaulthref']);
+  }
   
   drupal_set_message('User badges settings updated.');
 }
