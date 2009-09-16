@@ -173,6 +173,8 @@ function user_badges_uninstall() {
   drupal_uninstall_schema('user_badges');
   variable_del('user_badges_showone');
   variable_del('user_badges_showblocked');
+  variable_del('user_badges_userweight');
+  variable_del('user_badges_defaulthref');
 }
 
 

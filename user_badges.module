@@ -5,7 +5,7 @@
  * @file
  * @brief User Badges module file
  * 
- * This file contains all the functions used by the module.
+ * This file contains all the hook implementations and commonly used functions
  *
  * @author Jeff Robbins (jjeff), http://drupal.org/user/17190
  * @author Chad Phillips (hunmonk), http://drupal.org/user/22079
