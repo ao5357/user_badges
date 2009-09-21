@@ -213,15 +213,34 @@ function user_badges_edit_form($form_state, $bid = NULL) {
       '#type' => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      );
+    );
     $form['token_help']['help'] = array(
       '#value' => theme('token_help', array('userbadge','user')),
-      );
+    );
   }
   else {
+    $form['token_help'] = array(
+      '#title' => t('Replacement patterns'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
     $form['token_help']['help'] = array(
       '#value' => t('Install the !link module if you want this URL to include dynamic elements such as badge ID numbers.', array('!link' => l('Token', 'http://drupal.org/project/token', array('absolute' => TRUE)))),
       );
+  }
+  
+  if (module_exists('taxonomy')) {
+    if (variable_get('user_badges_vid', '')) {
+      $form['tid'] = taxonomy_form(variable_get('user_badges_vid', ''), $edit->tid);
+      //taxonomy sets the weight to -15, so we should get rid of it to preserve the ordering
+      unset($form['tid']['#weight']);
+    }
+    else {
+      $form['tid']['help'] = array(
+        '#value' => t('Activate the taxonomy module if you want to associate badges with taxonomy terms.'),
+      );
+    }
   }
   
   $form['unhideable'] = array(
@@ -311,17 +330,17 @@ function user_badges_edit_form_submit($form, &$form_state) {
   if (isset($edit->bid) && preg_match("/^[0-9]+$/D", $edit->bid)) {
     db_query('DELETE FROM {user_badges_badges} WHERE bid = %d', $edit->bid);
     $result = db_query("
-      INSERT INTO {user_badges_badges} (bid, name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit)
-      VALUES (%d, '%s', '%s', %d, '%s', %d, %d, %d)",
-      $edit->bid, trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit
+      INSERT INTO {user_badges_badges} (bid, name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid)
+      VALUES (%d, '%s', '%s', %d, '%s', %d, %d, %d, %d)",
+      $edit->bid, trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid
     );
   }
   //If the badge does not already exist, create it anew
   else {
     $result = db_query("
-      INSERT INTO {user_badges_badges} (name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit)
-      VALUES ('%s', '%s', %d, '%s', %d, %d, %d)",
-      trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit
+      INSERT INTO {user_badges_badges} (name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid)
+      VALUES ('%s', '%s', %d, '%s', %d, %d, %d, %d)",
+      trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid
     );
   }
   if ($result) {
@@ -591,7 +610,6 @@ function user_badges_settings_form() {
     '#default_value' => variable_get('user_badges_defaulthref', ''),
     '#description' => t('Enter a default URL to link all badges to. You can override this for individual badges.'),
   );
-  
   //Tokens help
   if (module_exists('token')) {
     $form['token_help'] = array(
@@ -608,6 +626,26 @@ function user_badges_settings_form() {
     $form['token_help']['help'] = array(
       '#value' => t('Install the !link module if you want this URL to include dynamic elements such as badge ID numbers.', array('!link' => l('Token', 'http://drupal.org/project/token', array('absolute' => TRUE)))),
       );
+  }
+  
+  //Let the user select a vocabulary to associate with badges
+  if (module_exists('taxonomy')) {
+    
+    //Build the options for the element
+    $vocabs = taxonomy_get_vocabularies();
+    $selects = array('' => t('&lt;none&gt;'));
+    foreach ($vocabs as $vid => $vocab) {
+      $selects[$vid] = $vocab->name;
+    }
+    
+    $form['vid'] = array(
+      '#type' => 'radios',
+      '#title' => t('Vocabulary'),
+      '#default_value' => variable_get('user_badges_vid', ''),
+      '#options' => $selects,
+      '#description' => t('Optional. Select a vocabulary to associate badges with. You can optionally associate each badge with one term in this vocabulary.'),
+    );
+    
   }
   
   $form[] = array(
@@ -639,6 +677,13 @@ function user_badges_settings_form_submit($form, $form_state) {
   //Only set a defaulthref if we have some non-whitespace in there
   if ( preg_match("/\S/", $form_state['values']['defaulthref']) ) {
     variable_set('user_badges_defaulthref', $form_state['values']['defaulthref']);
+  }
+  //Only set a vid if we have a value, otherwise wipe it for none/no taxonomy
+  if ($form_state['values']['vid']) {
+    variable_set('user_badges_vid',$form_state['values']['vid']);
+  }
+  else {
+    variable_del('user_badges_vid');
   }
   
   drupal_set_message('User badges settings updated.');

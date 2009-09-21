@@ -686,7 +686,7 @@ function user_badges_get_badges($uid, $options = array()) {
     if ($uid == 'all' || $uid == 'select') {
       $sql = db_query('
         SELECT b.bid, b.weight, b.name, b.image, b.href,
-        b.unhideable, b.fixedweight, b.doesnotcounttolimit
+        b.unhideable, b.fixedweight, b.doesnotcounttolimit, b.tid
         FROM {user_badges_badges} b 
         ORDER BY b.weight, b.name'
       );
@@ -697,7 +697,7 @@ function user_badges_get_badges($uid, $options = array()) {
       if ($usr && variable_get('user_badges_showblocked', 0)) {
         $sql = db_query('
           SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
-          b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight,
+          b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight, b.tid,
           COALESCE(u.userweight,b.weight) coalescedweight
           FROM {user_badges_badges} b 
             INNER JOIN {user_badges_user} u ON b.bid = u.bid 
@@ -710,7 +710,7 @@ function user_badges_get_badges($uid, $options = array()) {
       else {
         $query = '
           SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
-          b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight,
+          b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight, b.tid,
           COALESCE(u.userweight,b.weight) coalescedweight
           FROM {user_badges_badges} b
             INNER JOIN {user_badges_user} u ON b.bid = u.bid 
@@ -795,10 +795,10 @@ function user_badges_delete_form_submit($form, &$form_state) {
 function user_badges_get_roles($rid = NULL, $options = array()) {
   $roles = array();
   if ($rid) {
-    $sql = db_query('SELECT ubr.rid, ubr.bid, ubb.name, ubb.image, ubb.weight, ubb.href FROM {user_badges_roles} ubr INNER JOIN {user_badges_badges} ubb ON ubb.bid=ubr.bid WHERE ubr.rid = %d', $rid);
+    $sql = db_query('SELECT ubr.rid, ubr.bid, ubb.name, ubb.image, ubb.weight, ubb.href, ubb.tid FROM {user_badges_roles} ubr INNER JOIN {user_badges_badges} ubb ON ubb.bid=ubr.bid WHERE ubr.rid = %d', $rid);
   }
   else {
-    $sql = db_query('SELECT ubr.rid, ubr.bid, ubb.name, ubb.image, ubb.weight, ubb.href FROM {user_badges_roles} ubr INNER JOIN {user_badges_badges} ubb ON ubb.bid=ubr.bid', $rid);
+    $sql = db_query('SELECT ubr.rid, ubr.bid, ubb.name, ubb.image, ubb.weight, ubb.href, ubb.tid FROM {user_badges_roles} ubr INNER JOIN {user_badges_badges} ubb ON ubb.bid=ubr.bid', $rid);
   }
   while ($row = db_fetch_object($sql)) {
     if ($options['returnbadges']) {

@@ -59,6 +59,12 @@ function user_badges_schema() {
         'not null' => FALSE,
         'default' => '',
       ),
+      'tid' => array(
+        'description' => t('Optional associated taxonomn term id'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+      ),
       'unhideable' => array(
         'description' => t('If this is 1, the badge cannot be hidden by being moved down in weight. It will always show up.'),
         'type' => 'int',
@@ -85,6 +91,7 @@ function user_badges_schema() {
     'indexes' => array(
       'bid_weight_name' => array('bid', 'weight', 'name'),
       'weight_name' => array('weight', 'name'),
+      'tid_name' => array('tid', 'name'),
     )
   );
   $schema['user_badges_roles'] = array(
@@ -175,6 +182,7 @@ function user_badges_uninstall() {
   variable_del('user_badges_showblocked');
   variable_del('user_badges_userweight');
   variable_del('user_badges_defaulthref');
+  variable_del('user_badges_vid');
 }
 
 
@@ -227,6 +235,16 @@ function user_badges_update_6102() {
   //Add the new user weight field
   db_add_field($ret, 'user_badges_user', 'userweight', array('type' => 'int', 'not null' => FALSE));
   db_add_index($ret, 'user_badges_user', 'uid_weight', array('uid', 'userweight'));
+  
+  return $ret;
+}
+
+function user_badges_update_6103() {
+  $ret = array();
+  
+  //Add the new field for the taxonomy support
+  db_add_field($ret, 'user_badges_badges', 'tid', array('type' => 'int', 'not null' => FALSE, 'unsigned' => TRUE));
+  db_add_index($ret, 'user_badges_badges', 'tid_name', array('tid', 'name'));
   
   return $ret;
 }
