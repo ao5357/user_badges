@@ -21,6 +21,7 @@
  * Implementation of hook_help().
  */
 function user_badges_help($path, $arg) {
+  global $user;
   switch ($path) {
     case 'admin/modules#description':
     
@@ -32,6 +33,23 @@ function user_badges_help($path, $arg) {
 
     case 'admin/user/user_badges/images':
       return t("This is the user badges image library. Note that this area is not functional if you have private download active. Here you can upload images to display as a user badge, but you can also enter image URLs directly in the badge form, so this area is optional. The images can be anything you like, but it is recommended that you maintain a uniform icon size for all of your badges. Keep in mind that a user may have many badges displayed so you'll probably want to keep them as small as possible (like 16x16 pixels or smaller).");
+      
+    case 'user/%/badges':
+    case 'user/%/badges/list':
+      $showone = variable_get('user_badges_showone', 0);
+      if ( variable_get('user_badges_userweight', 0) && ($user->uid == $arg[1] || user_access('change badge assignments')) ) {
+        //Help messages for users who can reorder
+        if ($showone) {
+          return t("You can reorder badges here. Some badges may not appear on the list; these badges cannot be reordered. Only the top !number badges will be shown publicly. ", array('!number' => $showone));
+        }
+        else {
+          return t("You can reorder your badges here. Some badges may not appear on the list; these badges cannot be reordered. ");
+        }
+      }
+      else {
+        //Either we don't support reordering, or this user lacks the permission to do it
+        return t("These are all the badges owned by this user.");
+      }
       
   }
 }
@@ -114,8 +132,24 @@ function user_badges_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'user_badges.admin.inc',
   );
-  $items['user/%user/badges'] = array(
+  $items['user/%/badges'] = array(
     'title' => 'Badges',
+    'page callback' => 'user_badges_userweight_page',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+  );
+  $items['user/%/badges/list'] = array(
+    'title' => 'List',
+    'page callback' => 'user_badges_userweight_page',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['user/%/badges/edit'] = array(
+    'title' => 'Edit',
     'page callback' => 'user_badges_page',
     'page arguments' => array(1),
     'access arguments' => array('change badge assignments'),
@@ -158,10 +192,10 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
             $limit = -1;
           }
           //Loop through all potential badges and get the ones we can show
-          foreach ($account->badges_all as $badge) {
+          foreach ($account->badges_all as $bid => $badge) {
             //Display the badge if there's no limit or if the badge is unhideable or if we are within our limit
             if ( $limit != 0 || $badge->unhideable == 1 ) {
-              $account->badges[] = $badge;
+              $account->badges[$bid] = $badge;
               //Count down our limit, unless the badge doesn't count towards it
               if (!$badge->doesnotcounttolimit) {
                 $limit--;
@@ -257,22 +291,6 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
           '#type' => 'user_profile_item',
           '#value' => theme('user_badge_group', $badgeimgs),
         );
-        
-        //Is the user viewing their own account?
-        if ($user->uid == $account->uid || user_access('change badge assignments')) {
-          //If we allow user weighting of their own badges, we need to build a badge reweighting form
-          if (variable_get('user_badges_userweight', 0)) {
-            $account->content['user_badges_userweight'] = array(
-              '#type' => 'user_profile_category',
-              '#title' => t('Set Badge Order'),
-              '#weight' => 11,
-            );
-            $account->content['user_badges_userweight']['badges'] = array(
-              '#type' => 'user_profile_item',
-              '#value' => drupal_get_form('user_badges_userweight_form', $account),
-            );
-          }
-        }
       }
   }
 }
@@ -473,12 +491,40 @@ function user_badges_badge_autocomplete_validation($value) {
 
 
 /**
- * Define the page on user/uid/badges.
+ * Define the page on user/uid/badges/edit.
  */
-function user_badges_page($account) {
+function user_badges_page($uid) {
+  $account = user_load($uid);
+  
   drupal_set_title(t('Edit badges for %user_name', array('%user_name' => $account->name)));
   
   return drupal_get_form('user_badges_change_form', $account);
+  
+}
+
+/**
+ * Define the page on user/uid/badges.
+ */
+function user_badges_userweight_page($uid) {
+  global $user;
+  $account = user_load($uid);
+  
+  drupal_set_title(t('Badges for %user_name', array('%user_name' => $account->name)));
+  
+  //Do we have the right to rearrange badges?
+  if ( variable_get('user_badges_userweight', 0) && ($account->uid == $user->uid || user_access('change badge assignments')) ) {
+    //If the setting allows it and we are the badge owner or somebody with permission, yes.
+    return drupal_get_form('user_badges_userweight_form', $account);
+  }
+  else {
+    //Otherwise, just list the badges on the page
+    $user_badges = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
+      foreach ((array)$user_badges as $badge) {
+      $badges[] = theme('user_badge', $badge, $account);
+    }
+    return theme('user_badge_group', $badges);
+  }
+  
 }
 
 /**
@@ -679,8 +725,10 @@ function user_badges_user_remove_badge($uid, $bid, $type = NULL) {
  *   returned values for 'select' are just badge names
  */
 function user_badges_get_badges($uid, $options = array()) {
-  static $badges, $past_uid;
-  if (empty($past_uid) || $past_uid !== $uid) {
+  
+  static $badges, $past_uid, $past_options;
+  
+  if (empty($past_uid) || $past_uid !== $uid || $past_options !== $options ) {
     $past_uid = $uid;
     $badges = array();
     if ($uid == 'all' || $uid == 'select') {
@@ -698,7 +746,7 @@ function user_badges_get_badges($uid, $options = array()) {
         $sql = db_query('
           SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
           b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight, b.tid,
-          COALESCE(u.userweight,b.weight) coalescedweight
+          CASE WHEN b.fixedweight = 1 THEN b.weight ELSE COALESCE(u.userweight,b.weight) END coalescedweight
           FROM {user_badges_badges} b 
             INNER JOIN {user_badges_user} u ON b.bid = u.bid 
             INNER JOIN {user_badges_roles} r ON b.bid = r.bid
@@ -711,7 +759,7 @@ function user_badges_get_badges($uid, $options = array()) {
         $query = '
           SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
           b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight, b.tid,
-          COALESCE(u.userweight,b.weight) coalescedweight
+          CASE WHEN b.fixedweight = 1 THEN b.weight ELSE COALESCE(u.userweight,b.weight) END coalescedweight
           FROM {user_badges_badges} b
             INNER JOIN {user_badges_user} u ON b.bid = u.bid 
           WHERE u.uid = %d 
