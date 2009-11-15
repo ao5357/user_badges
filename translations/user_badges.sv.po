@@ -1,0 +1,728 @@
+# $Id$
+#
+# Swedish translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  user_badges.admin.inc,v 1.1.2.9 2009/09/21 22:48:26 likeless
+#  user_badges.module,v 1.15.2.16 2009/10/08 18:42:35 likeless
+#  user_badges.views.inc,v 1.1 2008/11/20 17:12:09 heine
+#  user_badges_products.module,v 1.1.2.5 2009/09/14 21:37:50 likeless
+#  user_badges.install,v 1.2.2.8 2009/09/21 22:48:26 likeless
+#  user_badges_products.install,v 1.1.2.3 2009/08/07 16:44:39 likeless
+#  views_handler_field_user_badges_user_uid.inc,v 1.1 2008/11/20 17:12:09 heine
+#  views_handler_filter_user_badges_user_type.inc,v 1.1.2.1 2009/08/11 15:08:07 likeless
+#  user_badges.info,v 1.3.2.4 2009/10/08 18:42:35 likeless
+#  user_badges_products.info,v 1.1.2.4 2009/08/06 15:29:53 likeless
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: User Badges 6.x\n"
+"POT-Creation-Date: 2009-11-14 13:30+0100\n"
+"PO-Revision-Date: 2009-11-14 17:36+0100\n"
+"Last-Translator: Magnus Gunnarsson <seals@passagen.se>\n"
+"Language-Team: drupalsverige.se\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: SWEDEN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: user_badges.admin.inc:28;168
+#: user_badges.module:327
+msgid "Name"
+msgstr "Namn"
+
+#: user_badges.admin.inc:29
+#: user_badges.views.inc:156
+#: user_badges.module:328
+#: user_badges_products.module:64
+msgid "Badge"
+msgstr "Emblem"
+
+#: user_badges.admin.inc:30;185
+#: user_badges.module:329
+msgid "Weight"
+msgstr "Vikt"
+
+#: user_badges.admin.inc:31
+#: user_badges.module:152
+msgid "Edit"
+msgstr "Redigera"
+
+#: user_badges.admin.inc:32;384;425;452
+msgid "Delete"
+msgstr "Ta bort"
+
+#: user_badges.admin.inc:42
+msgid "edit"
+msgstr "redigera"
+
+#: user_badges.admin.inc:43
+msgid "delete"
+msgstr "radera"
+
+#: user_badges.admin.inc:46
+#: user_badges_products.module:86
+msgid "Update"
+msgstr "Uppdatera"
+
+#: user_badges.admin.inc:62
+msgid "All weight values must be numeric."
+msgstr "Alla viktvärden måste vara numeriska."
+
+#: user_badges.admin.inc:81
+msgid "The badge weights have been updated."
+msgstr "Emblemets vikt har uppdaterats."
+
+#: user_badges.admin.inc:123
+#: user_badges.module:426
+msgid "No badges available."
+msgstr "Inga emblem tillgängliga."
+
+#: user_badges.admin.inc:172
+msgid "Name for the badge. Will be displayed as a tooltip when rolling over the badge."
+msgstr "Namn för emblemet. Kommer att visas som en liten ruta när muspekaren förs över emblemet."
+
+#: user_badges.admin.inc:177
+msgid "Image URL"
+msgstr "URL för bild"
+
+#: user_badges.admin.inc:181
+msgid "The image URL for this badge. If you want to use an image from the user badges image library, select from the list below."
+msgstr "URL för bild till denna bild. Välj från listan nedan om du vill använda en bild från användaremblemets bildkatalog."
+
+#: user_badges.admin.inc:189
+msgid "Lighter weighted items float to the top of lists. Heavier items go to the bottom. You must enter a number (negative values are allowed)."
+msgstr "Alternativ med lättare vikt placeras högre upp i listan. Tyngre alternativ placeras längre ned. Du måste ange ett tal (negativa värden är tillåtna)."
+
+#: user_badges.admin.inc:194
+msgid "Description URL"
+msgstr "URL för beskrivning"
+
+#: user_badges.admin.inc:197
+msgid ""
+"You can specify here the link where your badge will redirect your user.\n"
+"      This is useful for explanation pages about the badge, for instance. If you do not wish \n"
+"      your badge to be clickable, please leave this field empty."
+msgstr "Här kan du specificera länken som ditt emblem kommer att omdirigera din användare till. Detta är till exempel användbart för förklaringssidor om emblemet. Lämna detta fält tom om du inte vill att ditt emblem ska vara klickbart."
+
+#: user_badges.admin.inc:200
+msgid "Tips:"
+msgstr "Tips:"
+
+#: user_badges.admin.inc:201
+msgid "If you provide the full URL, it will be considered an external URL."
+msgstr "Om du tillhandahåller den fullständiga URL:en så kommer det att tolkas som en extern URL."
+
+#: user_badges.admin.inc:202
+msgid ""
+"If you provide only the path (e.g. \"admin/content/node\"), it is considered an\n"
+"          internal link."
+msgstr "Om du tillhandahåller enbart sökvägen (till exempel \"admin/content/node\") så kommer det att tolkas som en intern länk."
+
+#: user_badges.admin.inc:204
+msgid "Use %none to override a default link in the settings tab with no link for this badge."
+msgstr "Använd %none för att åsidosätta en förvald länk under inställningsfliken med inga länkar för detta emblem."
+
+#: user_badges.admin.inc:212;223;616
+msgid "Replacement patterns"
+msgstr "Ersättningsmönster"
+
+#: user_badges.admin.inc:229;627
+msgid "Install the !link module if you want this URL to include dynamic elements such as badge ID numbers."
+msgstr "Installera modulen !link om du vill att denna URL skall inkludera dynamiska element såsom nummer för ID till emblem."
+
+#: user_badges.admin.inc:241
+msgid "Activate the taxonomy module if you want to associate badges with taxonomy terms."
+msgstr "Aktivera modulen Taxonomi om du vill associera emblem med taxonomitermer."
+
+#: user_badges.admin.inc:248
+msgid "Cannot be Hidden"
+msgstr "Får inte vara dolt"
+
+#: user_badges.admin.inc:250
+msgid "If this is set, the badge cannot be hidden by being moved down in weight. It will always show up."
+msgstr "Om detta är angivet så får inte emblem vara dolda genom att flytta ned dem i vikt. Det kommer alltid att synas."
+
+#: user_badges.admin.inc:254
+msgid "Fixed Weight"
+msgstr "Låst vikt"
+
+#: user_badges.admin.inc:256
+msgid "If this is set, the badge cannot have a user assigned weight, regardless of settings."
+msgstr "Om detta är angivet så kan inte emblemet ha en vikt tilldelat av användare, oavsett inställningar."
+
+#: user_badges.admin.inc:260
+msgid "Does Not Count to Limit"
+msgstr "Räknas inte till gräns"
+
+#: user_badges.admin.inc:262
+msgid "If this is set, the badge does not count towards the limit for number of badges to display per user."
+msgstr "Om detta är angivet så kommer emblemet inte att räknas till gränsen för antalet emblem att visa per användare."
+
+#: user_badges.admin.inc:266;288
+#: user_badges.module:368
+msgid "Submit"
+msgstr "Skicka"
+
+#: user_badges.admin.inc:268
+msgid "Use the image URL above instead of a library image."
+msgstr "Använd URL:en för bild ovan istället för ett bildbibliotek."
+
+#: user_badges.admin.inc:272
+msgid "Image Library"
+msgstr "Bildbibliotek"
+
+#: user_badges.admin.inc:275
+msgid "If you have not entered an image URL above, you can select an image from this user badges image library to associate with this badge. You can upload additional images to the library under the <a href=\"@url\">images</a> tab."
+msgstr "Om du inte har angett en URL för bild ovan så kan du välja en bild från detta bildbibliotek till användaremblem för att associera med detta emblem. Du kan ladda upp ytterligare bilder till biblioteket under fliken <a href=\"@url\">bilder</a>."
+
+#: user_badges.admin.inc:281
+msgid "Image"
+msgstr "Bild"
+
+#: user_badges.admin.inc:282
+msgid "No badge images uploaded."
+msgstr "Inga emblembilder uppladdade."
+
+#: user_badges.admin.inc:283
+msgid "You can enter an image URL directly above, but if you want to instead upload your image to the user badges image library, use <a href=\"@upload_link\">this link</a>. Note that private download is incompatible with this library and should use direct URL entry instead."
+msgstr "Ovan kan du direkt ange en URL för bild, men om du istället vill ladda upp din bild till biblioteket för användaremlem så använd <a href=\"@upload_link\">denna länk</a>. Observera att privad nedladdning inte fungerar med detta bibliotek och måste istället använda direkt inmatning via URL."
+
+#: user_badges.admin.inc:300
+msgid "You cannot both enter an image URL and select an image from the library too. A badge can only have one image."
+msgstr "Du kan inte både ange en URL för bild och välja en bild en bild från biblioteket. Ett emblem kan bara ha en bild."
+
+#: user_badges.admin.inc:303
+msgid "You need to either enter an image URL or select an image from the library. Your badge needs an image."
+msgstr "Du måste antingen ange en URL för bild eller välja en bild från biblioteket. Ditt emblem behöver en bild."
+
+#: user_badges.admin.inc:308
+msgid "This is not a valid image URL. You need to enter a complete image URL, including the \"http://\" at the start."
+msgstr "Detta är inte en giltig URL för bild. Du måste ange en komplett URL för bild som inkluderar \"http://\"."
+
+#: user_badges.admin.inc:313
+msgid "Your value for the weight must be a number. Negative numbers are allowed, but not decimals."
+msgstr "Ditt värde för vikt måste vara ett tal. Negativa tal är tillåtna, men inte decimaler."
+
+#: user_badges.admin.inc:347
+msgid "Badge %badgename saved."
+msgstr "Emblem %badgename sparat."
+
+#: user_badges.admin.inc:350
+msgid "There was a problem saving the badge information into the database."
+msgstr "Det uppstod ett problem vid sparandet av information om emblem till databasen."
+
+#: user_badges.admin.inc:361
+msgid "Upload image"
+msgstr "Ladda upp bild"
+
+#: user_badges.admin.inc:362;400;448
+msgid "Upload"
+msgstr "Ladda upp"
+
+#: user_badges.admin.inc:365
+msgid "Upload of images requires the upload module to be enabled."
+msgstr "Uppladdning av bilder kräver att modulen Uppladdning är aktiverad."
+
+#: user_badges.admin.inc:410
+msgid "Uploaded image file does not appear to be a valid image file.  Please try again"
+msgstr "Uppladdad bildfil verkar inte vara en giltig bildfil. Var vänlig försök igen."
+
+#: user_badges.admin.inc:418
+msgid "Cannot save image.  Enter the path to an image and try again."
+msgstr "Kan inte spara bild. Ange sökvägen till en bild och försök igen."
+
+#: user_badges.admin.inc:422
+msgid "Cannot save image - directory not writable"
+msgstr "Kan inte spara bild - katalog är inte skrivbar"
+
+#: user_badges.admin.inc:427
+msgid "Please select images to delete."
+msgstr "Var vänlig välj bilder att radera."
+
+#: user_badges.admin.inc:484
+msgid "Blocked Badge"
+msgstr "Spärrade emblem"
+
+#: user_badges.admin.inc:491
+msgid "blocked user"
+msgstr "spärrad användare"
+
+#: user_badges.admin.inc:495;515
+#: user_badges.module:452
+msgid " (Badge ID "
+msgstr "(ID för emblem "
+
+#: user_badges.admin.inc:496;516
+msgid " Current: "
+msgstr "Nuvarande:"
+
+#: user_badges.admin.inc:501
+msgid "Role Badges"
+msgstr "Rollemblem"
+
+#: user_badges.admin.inc:522
+msgid "Save Role Badges"
+msgstr "Spara rollemblem"
+
+#: user_badges.admin.inc:540;543
+#: user_badges_products.module:107
+msgid "\"@value\" is not a valid badge name. Try using the autocomplete function (requires javascript)."
+msgstr "\"@value\" är inte ett giltigt namn för emblem. Försök genom att använda funktionen för automatiskt komplettering (kräver JavaScript)."
+
+#: user_badges.admin.inc:549;552
+#: user_badges.module:592
+#: user_badges_products.module:111
+msgid "@value is not a valid badge ID. Try using the autocomplete function (requires javascript)."
+msgstr "\"@value\" är inte ett giltigt ID för emblem. Försök genom att använda funktionen för automatiskt komplettering (kräver JavaScript)."
+
+#: user_badges.admin.inc:566
+#: user_badges.module:475
+#: user_badges.install:107;125
+#: user_badges_products.install:26
+msgid "Badge ID"
+msgstr "ID för emblem"
+
+#: user_badges.admin.inc:579
+msgid "Number of badges to display"
+msgstr "Antal emblem att visa"
+
+#: user_badges.admin.inc:583
+msgid "Only this many badges with the lightest weights will be shown."
+msgstr "Endast så här många emblem med den lättaste vikten kommer att visas."
+
+#: user_badges.admin.inc:584
+msgid "Set to zero to apply no limit."
+msgstr "Sätt till noll för att ange obegränsat."
+
+#: user_badges.admin.inc:585
+msgid "Note that if multiple badges have the same lightest weight, only one of them will appear (first by alphabetical order)."
+msgstr "Observera att om flera emblem har samma låga vikt så kommer endast ett av dem att visas (den första genom alfabetiskt ordning)."
+
+#: user_badges.admin.inc:589
+msgid "Only show blocked user badge"
+msgstr "Visa enbart spärrade användaremblem"
+
+#: user_badges.admin.inc:591
+msgid ""
+"If checked, only the badge associated to blocked users will be shown, overriding other badges \n"
+"      the user eventually has as well as any other settings."
+msgstr "Om ikryssat så kommer enbart emblem som är associerade till spärrade användare att visas och åsidosätta andra emblem som användaren eventuellt har, och även andra eventuella inställningar."
+
+#: user_badges.admin.inc:593
+msgid "Note that if there is no badge associated to blocked users, no badges will appear."
+msgstr "Observera att om det inte finns något emblem associerat till spärrade användare så kommer inget emblen att visas."
+
+#: user_badges.admin.inc:594
+msgid "This option only acts on blocked users and has no repercussions on active user badges."
+msgstr "Detta alternativ uppträder enbart för spärrade användare och har inga återverkningar på aktiva användaremblem."
+
+#: user_badges.admin.inc:598
+msgid "Allow users to reorder badges"
+msgstr "Låt användare ändra ordning på emblem"
+
+#: user_badges.admin.inc:600
+msgid ""
+"If checked, users will have the ability to reweight their badges in their profile,\n"
+"      enabling them to set what order their badges display, and also which badges will display if a limit is set above."
+msgstr "Om ikryssat så kommer användare ha möjlighet att omvikta sina emblen i sina profiler, och låter dem ange ordningen för hur deras emblem skall visas och också vilka emblem som skall visas om en gräns är angiven ovan."
+
+#: user_badges.admin.inc:602
+msgid ""
+"Note that you can make individual badges exempt from this function, allowing you to force them to the top or bottom of the \n"
+"      list by giving them a very high or low weight value."
+msgstr "Observera att du kan göra individuella undantag för emblem från denna funktion vilket låter dig tvinga dem till toppen eller botten av listan genom att ge dem ett väldigt högt eller lågt viktvärde."
+
+#: user_badges.admin.inc:607
+msgid "Default badge link URL"
+msgstr "Förvald URL för emblemlänk"
+
+#: user_badges.admin.inc:611
+msgid "Enter a default URL to link all badges to. You can override this for individual badges."
+msgstr "Ange en förvald URL att länka alla emblem till. Du kan åsidosätta detta för individuella emblem."
+
+#: user_badges.admin.inc:636
+msgid "&lt;none&gt;"
+msgstr "&lt;ingen&gt;"
+
+#: user_badges.admin.inc:643
+msgid "Vocabulary"
+msgstr "Vokabulär"
+
+#: user_badges.admin.inc:646
+msgid "Optional. Select a vocabulary to associate badges with. You can optionally associate each badge with one term in this vocabulary."
+msgstr "Valfritt. Välj ett vokabulär att associera emblem med. Du kan valfritt associera varje emblem med en term i detta vokabulär."
+
+#: user_badges.admin.inc:653
+msgid "Save Settings"
+msgstr "Spara inställningar"
+
+#: user_badges.admin.inc:664
+msgid "Must be a positive number."
+msgstr "Måste vara ett positivt nummer."
+
+#: user_badges.views.inc:40;62;169
+msgid "User Badges"
+msgstr "Användaremblem"
+
+#: user_badges.views.inc:78
+msgid "Bid"
+msgstr "Bid"
+
+#: user_badges.views.inc:79
+msgid "The badge ID of the user badge itself."
+msgstr "ID för emblemet till själva användaremblemet."
+
+#: user_badges.views.inc:102
+msgid "Type"
+msgstr "Typ"
+
+#: user_badges.views.inc:103
+msgid "Whether the badge was set as part of the role, or individually assigned."
+msgstr "Huruvida emblemet var satt som del av rollen eller individuellt tilldelat."
+
+#: user_badges.views.inc:120
+msgid "Badge Name"
+msgstr "Namn på emblem"
+
+#: user_badges.views.inc:121
+msgid "The name of the user badge."
+msgstr "Namnet på användaremblemet."
+
+#: user_badges.views.inc:142
+msgid "Badge Weight"
+msgstr "Vikt för emblem"
+
+#: user_badges.views.inc:143
+msgid "The weight of the badge, as defined on the user badges settings page."
+msgstr "Vikten på emblemet som det är definierat på inställningssidan för användaremblem.."
+
+#: user_badges.views.inc:158
+msgid "An individual user badge."
+msgstr "Ett individuellt användaremblem."
+
+#: user_badges.views.inc:167
+msgid "Grouped User Badges"
+msgstr "Grupperade användaremblem"
+
+#: user_badges.views.inc:168
+msgid "All the user's user badges."
+msgstr "Alla användaremblem för användaren."
+
+#: views_handler_field_user_badges_user_uid.inc:67
+msgid "Appearance"
+msgstr "Visning"
+
+#: views_handler_field_user_badges_user_uid.inc:68
+msgid "How the badges will appear."
+msgstr "Hur emblemen kommer att visas."
+
+#: views_handler_field_user_badges_user_uid.inc:71
+#: user_badges.module:287;72;136
+msgid "Badges"
+msgstr "Emblem"
+
+#: views_handler_field_user_badges_user_uid.inc:72
+msgid "Linked Text"
+msgstr "Länkad text"
+
+#: views_handler_field_user_badges_user_uid.inc:73
+msgid "Unlinked Text"
+msgstr "Ej länkad text"
+
+#: views_handler_field_user_badges_user_uid.inc:74;91
+msgid "Custom Theme"
+msgstr "Anpassat tema"
+
+#: views_handler_field_user_badges_user_uid.inc:81
+msgid "Text Seperator"
+msgstr "Textavskiljare"
+
+#: views_handler_field_user_badges_user_uid.inc:82
+msgid "If you select text formats above, this is the string that will go between each badge name."
+msgstr "Detta är strängen som kommer att finnas mellan varje emblemnamn om du väljer textformat ovan."
+
+#: views_handler_field_user_badges_user_uid.inc:92
+msgid "If you select \"Custom Theme\" above, enter the name of your theme here. It will be passed an array of badge objects."
+msgstr "Här anger du namnet på temat om du väljer \"Anpassat tema\" ovan. Det kommer att ges en array av emblemobjekt."
+
+#: views_handler_filter_user_badges_user_type.inc:15
+msgid "User Badge"
+msgstr "Användaremblem"
+
+#: views_handler_filter_user_badges_user_type.inc:16
+msgid "Granted by Role"
+msgstr "Beviljade per roll"
+
+#: user_badges.module:29
+msgid "User badges are iconic images which can be assigned to users. They can represent accomplishments, status, or anything you'd like. These badges will show up in the user's profile, and could also be used by a theme to appear with user postings on forums, comments, or nodes. Badges can be assigned manually by an administrator by visiting a user's profile. They also can be assigned automatically by role or ecommerce purchase (if ecommerce modules are installed). The excellent !link module can also be used to set and unset badges on a wide variety of conditions."
+msgstr "Användaremblem är ikonbilder som kan tilldelelas till användare. De kan representera bedrifter, status eller vad som helst. Dessa emblem kommer att visas i användarens profil och kan också användas av ett tema för att visas vid användarens inlägg i forum, kommentarer eller noder. Emblem kan tilldelas manuellt av en administratör genom att besöka en användares profil. De kan också tilldelas automatiskt per roll eller köp genom E-commerce (om modulen E-commerce är installerad). Den utmärkta modulen !link kan också användas för att tilldela och ta bort emblem för en stor variation av händelser."
+
+#: user_badges.module:32
+msgid "Select the badge that you'd like to associate with each role."
+msgstr "Välj det emblem som du vill associera med varje roll."
+
+#: user_badges.module:35
+msgid "This is the user badges image library. Note that this area is not functional if you have private download active. Here you can upload images to display as a user badge, but you can also enter image URLs directly in the badge form, so this area is optional. The images can be anything you like, but it is recommended that you maintain a uniform icon size for all of your badges. Keep in mind that a user may have many badges displayed so you'll probably want to keep them as small as possible (like 16x16 pixels or smaller)."
+msgstr "Detta är användaremblemens bildkatalog. Observera att detta område inte fungerar om du har aktiverat privat nedladdning. Här kan du ladda upp bilder att visa som ett användaremblem, men du kan också ange URL:er för bilder direkt i emblemets formulär så detta område är valfritt. Bilderna kan vara vad som helst, men det rekommenderas att du bibehåller en likformad ikonstorlek för alla dina emblem. Kom ihåg att en användare kan ha flera emblem visade så du vill förmodligen ha dem så små som möjligt (16x16 pixlar eller mindre)."
+
+#: user_badges.module:43
+msgid "You can reorder badges here. Some badges may not appear on the list; these badges cannot be reordered. Only the top !number badges will be shown publicly. "
+msgstr "Här kan du kan ändra ordning på emblem. Några emblem kanske inte syns i listan, dessa emblem kan inte ordnas om. Enbart de första !number emblemen kommer att synas publikt."
+
+#: user_badges.module:46
+msgid "You can reorder your badges here. Some badges may not appear on the list; these badges cannot be reordered. "
+msgstr "Här kan du kan ändra ordning på dina emblem. Några emblem kanske inte syns i listan, dessa emblem kan inte ordnas om."
+
+#: user_badges.module:51
+msgid "These are all the badges owned by this user."
+msgstr "Detta är alla de emblem som tillhör denna användare."
+
+#: user_badges.module:160
+msgid "User Badges Badge Name Autocomplete"
+msgstr "Användaremblems automatiska namnskomplettering"
+
+#: user_badges.module:226;254
+msgid "User assigned %name badge."
+msgstr "Användartilldelat emblem %name."
+
+#: user_badges.module:265
+msgid "%name badge removed from user."
+msgstr "Emblemet %name togs bort från användare."
+
+#: user_badges.module:388
+msgid "Your badge order has been updated."
+msgstr "Din ordning för emblem har uppdaterats."
+
+#: user_badges.module:499
+msgid "Edit badges for %user_name"
+msgstr "Redigera emblem för %user_name"
+
+#: user_badges.module:512
+msgid "Badges for %user_name"
+msgstr "Emblem för %user_name"
+
+#: user_badges.module:542
+msgid "Add Badges"
+msgstr "Lägg till emblem"
+
+#: user_badges.module:550
+msgid "New Badge !number"
+msgstr "Nytt emblem !number"
+
+#: user_badges.module:559
+msgid "Remove Badges"
+msgstr "Radera emblem"
+
+#: user_badges.module:577
+msgid "Update Badges"
+msgstr "Uppdatera emblem"
+
+#: user_badges.module:595
+msgid "\"@value\" is not a valid badge. Try using the autocomplete function (requires javascript)."
+msgstr "\"@value\" är inte ett giltigt emblem. Försök att använda den automatiskt kompletterande funktionen (kräver JavaScript)."
+
+#: user_badges.module:629
+msgid "!removalcount badge(s) removed."
+msgstr "!removalcount emblem borttagna."
+
+#: user_badges.module:674
+msgid "Badges saved."
+msgstr "Emblem sparade."
+
+#: user_badges.module:677
+msgid "There was a problem saving badges to the database."
+msgstr "Det uppstod ett problem vid sparandet av emlem till databasen."
+
+#: user_badges.module:817
+msgid "Are you sure you want to delete the badge %name?"
+msgstr "Är du säker på att du vill radera emblemet %name?"
+
+#: user_badges.module:819
+msgid "This badge does not exist."
+msgstr "Detta emblem existerar inte."
+
+#: user_badges.module:827
+msgid "Badge deleted."
+msgstr "Emblem raderat."
+
+#: user_badges.module:920
+msgid "Roles saved."
+msgstr "Roller sparade."
+
+#: user_badges.module:923
+msgid "There was a problem saving roles to the database"
+msgstr "Det uppstod ett problem vid sparandet av roller till databasen."
+
+#: user_badges.module:1032
+msgid "Add badge"
+msgstr "Lägg till emblem"
+
+#: user_badges.module:1040
+msgid "Remove badge"
+msgstr "Ta bort emblem"
+
+#: user_badges.module:1183
+msgid "The badge name"
+msgstr "Namnet på emblemet"
+
+#: user_badges.module:1184
+msgid "The badge id number (bid)"
+msgstr "ID-numret (bid) på emblemet"
+
+#: user_badges.module:1071;1074;1129;1132
+msgid "action"
+msgstr "åtgärd"
+
+#: user_badges.module:1071
+msgid "Added user badge %badge to user %name."
+msgstr "Lade till användaremblemet %badge för användare %name."
+
+#: user_badges.module:1074
+msgid "Unable to add user badge %badge to user %name."
+msgstr "Kunde inte lägga till användaremblem %badge för användare %name."
+
+#: user_badges.module:1129
+msgid "Removed user badge %badge to user %name."
+msgstr "Tog bort användaremblemet %badge för användare %name."
+
+#: user_badges.module:1132
+msgid "Unable to remove user badge %badge to user %name."
+msgstr "Kunde inte radera användaremblem %badge för användare %name."
+
+#: user_badges.module:61
+msgid "manage badges"
+msgstr "hantera emblem"
+
+#: user_badges.module:61
+msgid "change badge assignments"
+msgstr "ändra tillhörigheter för emblem"
+
+#: user_badges.module:79;144
+msgid "List"
+msgstr "Lista"
+
+#: user_badges.module:88
+msgid "Add"
+msgstr "Lägg till"
+
+#: user_badges.module:96
+msgid "Images"
+msgstr "Bilder"
+
+#: user_badges.module:104
+msgid "Roles"
+msgstr "Roller"
+
+#: user_badges.module:112
+msgid "Settings"
+msgstr "Inställningar"
+
+#: user_badges.module:120
+msgid "Edit badge"
+msgstr "Redigera emblem"
+
+#: user_badges.module:128
+msgid "Delete badge"
+msgstr "Radera emblem"
+
+#: user_badges_products.module:26
+msgid "For each ecommerce product listed below, select the badge that will be assigned to users upon payment completion."
+msgstr "För varje produkt av typen E-commerce som är visad nedan, välj det emblem som skall tilldelas till användare när betalning är genomförd."
+
+#: user_badges_products.module:63
+msgid "Product"
+msgstr "Produkt"
+
+#: user_badges_products.module:65
+msgid "Remove"
+msgstr "Ta bort"
+
+#: user_badges_products.module:66
+msgid "New Badge"
+msgstr "Nytt emblem"
+
+#: user_badges_products.module:137
+msgid "The badge product associations have been updated."
+msgstr "Associeringar till produktemblemet har uppdaterats."
+
+#: user_badges_products.module:177
+msgid "No products available."
+msgstr "Inga produkter tillgängliga."
+
+#: user_badges_products.module:35
+msgid "Products"
+msgstr "Produkter"
+
+#: user_badges.install:30
+msgid "Original badge ID"
+msgstr "Ursprungligt ID för emblem"
+
+#: user_badges.install:36
+msgid "Badge name"
+msgstr "Namn för emblem"
+
+#: user_badges.install:43
+msgid "Associated image. Can be a full URL, or a relative path for the image library."
+msgstr "Associerad bild. Kan vara en fullständig URL eller en relativ sökväg till bildbiblioteket."
+
+#: user_badges.install:50
+msgid "Order in list"
+msgstr "Ordning i lista"
+
+#: user_badges.install:56
+msgid "Badge description URL"
+msgstr "Beskrivning till URL för emblem"
+
+#: user_badges.install:63
+msgid "Optional associated taxonomn term id"
+msgstr "ID för valfri associeriad taxonomiterm"
+
+#: user_badges.install:69
+msgid "If this is 1, the badge cannot be hidden by being moved down in weight. It will always show up."
+msgstr "Om detta är 1 kan inte emblemet vara dolt genom att flyttas nedåt i vikt. Det kommer alltid att synas."
+
+#: user_badges.install:76
+msgid "If this is 1, the badge cannot have a user assigned weight, regardless of settings."
+msgstr "Om detta är 1 kan inte emblemet ha en vikt tilldelat av användare, oavsett inställningar."
+
+#: user_badges.install:83
+msgid "If this is 1, the badge does not count towards the limit for number of badges to display per user."
+msgstr "Om detta är 1 kommer emblemet inte räknas mot gränsen för antal emblem att visa per användare."
+
+#: user_badges.install:101
+msgid "Role ID"
+msgstr "ID för roll"
+
+#: user_badges.install:119
+msgid "User ID"
+msgstr "ID för användare"
+
+#: user_badges.install:131
+msgid "Whether set as part of the role, or individually assigned ('user', 'role')"
+msgstr "Huruvida satt som del av roll, eller individuell tilldelning ('användare', 'roll')"
+
+#: user_badges.install:138
+msgid "Order in list, as set by user."
+msgstr "Ordning i lista, satt av användare."
+
+#: user_badges_products.install:33
+msgid "Node ID"
+msgstr "ID för noden"
+
+#: user_badges.info:0
+msgid "User badges"
+msgstr "Användaremblem"
+
+#: user_badges.info:0
+#: user_badges_products.info:0
+msgid "Enables assignment of graphical badges to users and roles."
+msgstr "Möjliggör tilldelning av grafiska emblem till användare och roller."
+
+#: user_badges_products.info:0
+msgid "User Product Badges"
+msgstr "Användaremblem för produkter"
+
