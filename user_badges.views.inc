@@ -4,14 +4,14 @@
 /**
  * @file
  * This defines views hooks for the User_badges module. It will be loaded automatically as needed by the Views module.
- * 
+ *
  * @author Heine Deelstra (Heine), http://drupal.org/user/17943
  * @author Richard Skinner (Likeless), http://drupal.org/user/310635
- * 
+ *
  */
 
 /**
- * Implementation of hook_views_handlers().
+ * Implements hook_views_handlers().
  */
 function user_badges_views_handlers() {
   return array(
@@ -30,7 +30,7 @@ function user_badges_views_handlers() {
 }
 
 /**
- * Implementation of hook_views_data()
+ * Implements hook_views_data().
  */
 function user_badges_views_data() {
   // Describe the user_badges_user table.
@@ -57,22 +57,22 @@ function user_badges_views_data() {
     'left_field' => 'uid',
     'field' => 'uid',
   );
-  
+
   // Describe the user_badges_badges table.
   $data['user_badges_badges']['table']['group']  = t('User Badges');
-  
+
   //We always the user_badges_badges table on to the user_badges_user table
   $user_badges_badges_join_info = array(
     'left_table' => 'user_badges_user',
     'left_field' => 'bid',
     'field' => 'bid',
   );
-  
+
   $data['user_badges_badges']['table']['join']['users'] = $user_badges_badges_join_info;
   $data['user_badges_badges']['table']['join']['node'] = $user_badges_badges_join_info;
   $data['user_badges_badges']['table']['join']['node_revisions'] = $user_badges_badges_join_info;
 
-  
+
   // Information for processing badge IDs
   $data['user_badges_user']['bid'] = array(
     'title' => t('Bid'),
@@ -96,7 +96,7 @@ function user_badges_views_data() {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   // Information for processing badge types
   $data['user_badges_user']['type'] = array(
     'title' => t('Type'),
@@ -114,7 +114,7 @@ function user_badges_views_data() {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   // Information for processing badges by name
   $data['user_badges_badges']['name'] = array(
     'title' => t('Badge Name'),
@@ -136,7 +136,7 @@ function user_badges_views_data() {
       'handler' => 'views_handler_sort',
     ),
   );
-  
+
   // Information for processing badges weights
   $data['user_badges_badges']['weight'] = array(
     'title' => t('Badge Weight'),

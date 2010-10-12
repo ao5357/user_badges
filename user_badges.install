@@ -4,8 +4,8 @@
 /**
  * @file
  * @brief User Badges install file
- * 
- * This file contains all the installation functions of the schema, tables and variables 
+ *
+ * This file contains all the installation functions of the schema, tables and variables
  * used by the module.
  *
  * @author Jeff Robbins (jjeff), http://drupal.org/user/17190
@@ -19,10 +19,11 @@
  */
 
 /**
- * Implementation of hook_schema()
+ * Implements hook_schema().
  */
 function user_badges_schema() {
   $schema = array();
+
   $schema['user_badges_badges'] = array(
     'description' => 'Defines the user badges themselves (image, weight etc.)',
     'fields' => array(
@@ -94,6 +95,7 @@ function user_badges_schema() {
       'tid_name' => array('tid', 'name'),
     )
   );
+
   $schema['user_badges_roles'] = array(
     'description' => 'Stores which roles grant which badges.',
     'fields' => array(
@@ -112,6 +114,7 @@ function user_badges_schema() {
     ),
     'primary key' => array('bid', 'rid'),
   );
+
   $schema['user_badges_user'] = array(
     'description' => 'Stores which users have which badges.',
     'fields' => array(
@@ -139,7 +142,7 @@ function user_badges_schema() {
         'type' => 'int',
         'not null' => FALSE,
       ),
-     ),
+    ),
     'primary key' => array('bid', 'uid', 'type'),
     'indexes' => array(
       'uid_bid' => array('uid', 'bid'),
@@ -147,13 +150,13 @@ function user_badges_schema() {
       'type' => array('type'),
     ),
   );
-  
+
   return $schema;
 }
 
 
 /**
- * Implementation of hook_install()
+ * Implements hook_install().
  */
 function user_badges_install() {
   drupal_install_schema('user_badges');
@@ -161,7 +164,7 @@ function user_badges_install() {
 
 
 /**
- * Implementation of hook_uninstall()
+ * Implements hook_uninstall().
  */
 function user_badges_uninstall() {
   // Delete files.
@@ -172,7 +175,7 @@ function user_badges_uninstall() {
       file_delete($file->filename);
     }
   }
-  
+
   // Delete the badges directory.
   if (file_exists($dir)) {
     rmdir($dir);
@@ -187,7 +190,7 @@ function user_badges_uninstall() {
 
 
 /**
- * Implementation of hook_update_N()
+ * Implements hook_update_N()
  * new DB structure
  */
 function user_badges_update_6001() {
@@ -201,7 +204,7 @@ function user_badges_update_6001() {
 
 function user_badges_update_6100() {
   $ret = array();
-  db_add_field($ret, 'user_badges_badges', 'href', 
+  db_add_field($ret, 'user_badges_badges', 'href',
     array('type' => 'varchar', 'length' => 80, 'not null' => FALSE, 'default' => ''));
   return $ret;
 }
@@ -218,33 +221,33 @@ function user_badges_update_6101() {
 
 function user_badges_update_6102() {
   $ret = array();
-  
+
   //We need to modify href to allow longer image urls
   if ($GLOBALS['db_type'] == 'mysql') {
     $ret[] = update_sql("ALTER TABLE {user_badges_badges} CHANGE image image varchar(255) default ''");
   }
   else { // pgsql
-   db_change_column($ret, 'user_badges_badges', 'image', 'image', 'varchar(255)', array('not null' => FALSE, 'default' => "''"));
-  }  
-  
+    db_change_column($ret, 'user_badges_badges', 'image', 'image', 'varchar(255)', array('not null' => FALSE, 'default' => "''"));
+  }
+
   //Add the new fields for the on/off checkbox settings
   db_add_field($ret, 'user_badges_badges', 'unhideable', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
   db_add_field($ret, 'user_badges_badges', 'fixedweight', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
   db_add_field($ret, 'user_badges_badges', 'doesnotcounttolimit', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
-  
+
   //Add the new user weight field
   db_add_field($ret, 'user_badges_user', 'userweight', array('type' => 'int', 'not null' => FALSE));
   db_add_index($ret, 'user_badges_user', 'uid_weight', array('uid', 'userweight'));
-  
+
   return $ret;
 }
 
 function user_badges_update_6103() {
   $ret = array();
-  
+
   //Add the new field for the taxonomy support
   db_add_field($ret, 'user_badges_badges', 'tid', array('type' => 'int', 'not null' => FALSE, 'unsigned' => TRUE));
   db_add_index($ret, 'user_badges_badges', 'tid_name', array('tid', 'name'));
-  
+
   return $ret;
 }

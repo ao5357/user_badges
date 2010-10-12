@@ -4,8 +4,8 @@
 /**
  * @file
  * @brief User Badges Product install file
- * 
- * This file contains all the installation functions of the schema, tables and variables 
+ *
+ * This file contains all the installation functions of the schema, tables and variables
  * used by the module.
  *
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
@@ -16,7 +16,7 @@
  */
 
 /**
- * Implementation of hook_schema()
+ * Implements hook_schema().
  */
 function user_badges_products_schema() {
   $schema['user_badges_product'] = array(
@@ -39,19 +39,19 @@ function user_badges_products_schema() {
     ),
     'primary key' => array('bid', 'nid'),
   );
-  
+
   return $schema;
 }
 
 /**
- * Implementation of hook_install()
+ * Implements hook_install().
  */
 function user_badges_products_install() {
   drupal_install_schema('user_badges_products');
 }
 
 /**
- * Implementation of hook_uninstall()
+ * Implements hook_uninstall().
  */
 function user_badges_products_uninstall() {
   drupal_uninstall_schema('user_badges_products');
