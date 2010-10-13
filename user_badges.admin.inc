@@ -572,9 +572,11 @@ function user_badges_roles_form_submit($form, &$form_state) {
 }
 
 /**
- * form for general module settings
+ * Form for general module settings.
  */
 function user_badges_settings_form() {
+  $noyes = array(t('No'), t('Yes'));
+
   $form['showone'] = array(
     '#type' => 'textfield',
     '#title' => t('Number of badges to display'),
@@ -584,25 +586,43 @@ function user_badges_settings_form() {
     '#description' => t('Only this many badges with the lightest weights will be shown.') .'<br/>'.
       t('Set to zero to apply no limit.') .'<br/>'.
       t('Note that if multiple badges have the same lightest weight, only one of them will appear (first by alphabetical order).'),
-  );
+    );
+
   $form['showblocked'] = array(
-    '#type' => 'checkbox',
+    '#type' => 'radios',
+    '#options' => $noyes,
     '#title' => t('Only show blocked user badge'),
     '#default_value' => variable_get('user_badges_showblocked', 0),
-    '#description' => t('If checked, only the badge associated to blocked users will be shown, overriding other badges
-      the user eventually has as well as any other settings.') .' <br/>'.
-      t('Note that if there is no badge associated to blocked users, no badges will appear.') .' <br/>'.
+    '#description' => t('If checked, only the badge associated to blocked users will be shown, overriding other badges the user eventually has as well as any other settings.') .' <br />'.
+      t('Note that if there is no badge associated to blocked users, no badges will appear.') .' <br />'.
       t('This option only acts on blocked users and has no repercussions on active user badges.'),
-  );
+    '#attributes' => array('class' => 'container-inline'),
+    );
+
   $form['userweight'] = array(
-    '#type' => 'checkbox',
+    '#type' => 'radios',
+    '#options' => $noyes,
     '#title' => t('Allow users to reorder badges'),
     '#default_value' => variable_get('user_badges_userweight', 0),
-    '#description' => t('If checked, users will have the ability to reweight their badges in their profile,
-      enabling them to set what order their badges display, and also which badges will display if a limit is set above.') .' <br/>'.
-      t('Note that you can make individual badges exempt from this function, allowing you to force them to the top or bottom of the
-      list by giving them a very high or low weight value.') .' <br/>',
-  );
+    '#description' => t('If checked, users will have the ability to reweight their badges in their profile, enabling them to set what order their badges display, and also which badges will display if a limit is set above.') .' <br />'.
+      t('Note that you can make individual badges exempt from this function, allowing you to force them to the top or bottom of the list by giving them a very high or low weight value.') .' <br />',
+    '#attributes' => array('class' => 'container-inline'),
+    );
+
+  if (module_exists('imagecache')) {
+    $form['imagecache'] = array(
+      '#type' => 'radios',
+      '#options' => $noyes,
+      '#title' => t('Allow ImageCache to size badges'),
+      '#default_value' => variable_get('user_badges_imagecache', 0),
+      '#description' => t('The ImageCache module is available, if you choose this option, it will be used to format the badge image. The preset name is "user-badges".'),
+      '#attributes' => array('class' => 'container-inline'),
+      );
+  }
+  else {
+    $form['imagecache'] = array('#type' => 'value', '#value' => 0);
+  }
+
   $form['defaulthref'] = array(
     '#type' => 'textfield',
     '#title' => t('Default badge link URL'),
@@ -610,8 +630,9 @@ function user_badges_settings_form() {
     '#maxlength' => 500,
     '#default_value' => variable_get('user_badges_defaulthref', ''),
     '#description' => t('Enter a default URL to link all badges to. You can override this for individual badges.'),
-  );
-  //Tokens help
+    );
+
+  // Tokens help.
   if (module_exists('token')) {
     $form['token_help'] = array(
       '#title' => t('Replacement patterns'),
@@ -632,7 +653,6 @@ function user_badges_settings_form() {
 
   //Let the user select a vocabulary to associate with badges
   if (module_exists('taxonomy')) {
-
     //Build the options for the element
     $vocabs = taxonomy_get_vocabularies();
     $selects = array('' => t('&lt;none&gt;'));
@@ -646,14 +666,11 @@ function user_badges_settings_form() {
       '#default_value' => variable_get('user_badges_vid', ''),
       '#options' => $selects,
       '#description' => t('Optional. Select a vocabulary to associate badges with. You can optionally associate each badge with one term in this vocabulary.'),
-    );
-
+      '#attributes' => array('class' => 'container-inline'),
+      );
   }
 
-  $form[] = array(
-    '#type' => 'submit',
-    '#value' => t('Save Settings'),
-  );
+  $form[] = array('#type' => 'submit', '#value' => t('Save configuration'));
   return $form;
 }
 
@@ -676,10 +693,13 @@ function user_badges_settings_form_submit($form, $form_state) {
   variable_set('user_badges_showone', $form_state['values']['showone']);
   variable_set('user_badges_showblocked', $form_state['values']['showblocked']);
   variable_set('user_badges_userweight', $form_state['values']['userweight']);
+  variable_set('user_badges_imagecache', $form_state['values']['imagecache']);
+
   //Only set a defaulthref if we have some non-whitespace in there
-  if ( preg_match("/\S/", $form_state['values']['defaulthref']) ) {
+  if (preg_match("/\S/", $form_state['values']['defaulthref'])) {
     variable_set('user_badges_defaulthref', $form_state['values']['defaulthref']);
   }
+
   //Only set a vid if we have a value, otherwise wipe it for none/no taxonomy
   if ($form_state['values']['vid']) {
     variable_set('user_badges_vid', $form_state['values']['vid']);
@@ -688,7 +708,7 @@ function user_badges_settings_form_submit($form, $form_state) {
     variable_del('user_badges_vid');
   }
 
-  drupal_set_message(t('User badges settings updated.'));
+  drupal_set_message(t('Configuration saved.'));
 }
 
 /**

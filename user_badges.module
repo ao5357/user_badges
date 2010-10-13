@@ -1,6 +1,9 @@
 <?php
 // $Id$
 
+// #585946 by NancyDru for robphillips - Static cache user badges to avoid queries.
+// #918846 by NancyDru for jeeba - Allow Imagecache to be used.
+
 /**
  * @file
  * @brief User Badges module file
@@ -18,7 +21,7 @@
  */
 
 /**
- * Implementshook_help().
+ * Implements hook_help().
  */
 function user_badges_help($path, $arg) {
   global $user;
@@ -55,14 +58,14 @@ function user_badges_help($path, $arg) {
 }
 
 /**
- * Implementshook_perm().
+ * Implements hook_perm().
  */
 function user_badges_perm() {
   return array('manage badges', 'change badge assignments');
 }
 
 /**
- * Implementshook_menu().
+ * Implements hook_menu().
  */
 function user_badges_menu() {
   $items = array();
@@ -74,7 +77,8 @@ function user_badges_menu() {
     'page arguments' => array('user_badges_badgelist_form'),
     'access arguments' => $access,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/list'] = array(
     'title' => 'List',
     'page callback' => 'drupal_get_form',
@@ -83,7 +87,8 @@ function user_badges_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/add'] = array(
     'title' => 'Add',
     'page callback' => 'drupal_get_form',
@@ -91,7 +96,8 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_LOCAL_TASK,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/images'] = array(
     'title' => 'Images',
     'page callback' => 'drupal_get_form',
@@ -99,7 +105,8 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_LOCAL_TASK,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/roles'] = array(
     'title' => 'Roles',
     'page callback' => 'drupal_get_form',
@@ -107,7 +114,8 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_LOCAL_TASK,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/settings'] = array(
     'title' => 'Settings',
     'page callback' => 'drupal_get_form',
@@ -115,7 +123,8 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_LOCAL_TASK,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/edit/%'] = array(
     'title' => 'Edit badge',
     'page callback' => 'drupal_get_form',
@@ -123,7 +132,8 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_CALLBACK,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['admin/user/user_badges/delete/%'] = array(
     'title' => 'Delete badge',
     'page callback' => 'drupal_get_form',
@@ -131,7 +141,8 @@ function user_badges_menu() {
     'access arguments' => $access,
     'type' => MENU_CALLBACK,
     'file' => 'user_badges.admin.inc',
-  );
+    );
+
   $items['user/%/badges'] = array(
     'title' => 'Badges',
     'page callback' => 'user_badges_userweight_page',
@@ -139,7 +150,8 @@ function user_badges_menu() {
     'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
-  );
+    );
+
   $items['user/%/badges/list'] = array(
     'title' => 'List',
     'page callback' => 'user_badges_userweight_page',
@@ -147,7 +159,8 @@ function user_badges_menu() {
     'access callback' => TRUE,
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
-  );
+    );
+
   $items['user/%/badges/edit'] = array(
     'title' => 'Edit',
     'page callback' => 'user_badges_page',
@@ -155,13 +168,14 @@ function user_badges_menu() {
     'access arguments' => array('change badge assignments'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 5,
-  );
+    );
+
   $items['user_badges/autocomplete'] = array(
     'title' => 'User Badges Badge Name Autocomplete',
     'page callback' => 'user_badges_badge_autocomplete',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-  );
+    );
 
   return $items;
 }
@@ -174,9 +188,15 @@ function user_badges_menu() {
  */
 function user_badges_user($op, &$edit, &$account, $category = 'account') {
   global $user;
-  switch ($op) {
+  static $badges = array();
 
+  switch ($op) {
     case 'load':
+      // Have we loaded this user before?
+      if (isset($badges[$account->uid])) {
+        $account->badges = $badges[$account->uid];
+      }
+
       if ($account->uid > 0) {
         //Get all user badges for this user, regardless of whether we filter the ones we show.
         $account->badges_all = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
@@ -207,6 +227,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
           $account->badges = $account->badges_all;
         }
       }
+      $badges[$account->uid] = $account->badges;
       break;
 
     case 'insert':
@@ -298,7 +319,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
 }
 
 /**
- * Implementshook_theme().
+ * Implements hook_theme().
  */
 function user_badges_theme() {
   return array(
@@ -999,11 +1020,12 @@ function theme_user_badge($badge, $account = NULL) {
   }
 
   //If we have a full image URL, don't require theme_image to get the size (it only breaks)
-  if (valid_url($badge->image, TRUE)) {
-    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class), FALSE);
+  $get_size = valid_url($badge->image, TRUE);
+  if (variable_get('user_badges_imagecache', 0)) {
+    $image = theme('imagecache', 'user-badges', $badge->image, $badge->name, $badge->name, array('class' => $badge->class));
   }
   else {
-    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class));
+    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class), !get_size);
   }
 
   //We don't link the badge if there is no link and no default, or if the default is overridden
@@ -1171,7 +1193,7 @@ function user_badges_remove_badge_action_submit($form, $form_state) {
 }
 
 /**
- * Implementshook_token_values().
+ * Implements hook_token_values().
  */
 function user_badges_token_values($type, $object = NULL) {
   if ($type == 'userbadge') {
@@ -1183,7 +1205,7 @@ function user_badges_token_values($type, $object = NULL) {
 }
 
 /**
- * Implementshook_token_list().
+ * Implements hook_token_list().
  */
 function user_badges_token_list($type = 'all') {
   if ($type == 'userbadge' || $type == 'all') {
@@ -1195,7 +1217,7 @@ function user_badges_token_list($type = 'all') {
 
 
 /**
- * Implementshook_cron()
+ * Implements hook_cron()
  * UNCOMMENT in order to get User Badges to work along with Auto Assign Role
  * notes: - this is a quite fast solution in order to solve Auto Assign Role issue
  *        - do not forget to set up your cron
