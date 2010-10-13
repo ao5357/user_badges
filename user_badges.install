@@ -32,69 +32,69 @@ function user_badges_schema() {
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
+        ),
       'name' => array(
         'description' => t('Badge name'),
         'type' => 'varchar',
         'length' => 50,
         'not null' => TRUE,
         'default' => '',
-      ),
+        ),
       'image' => array(
         'description' => t('Associated image. Can be a full URL, or a relative path for the image library.'),
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
-      ),
+        ),
       'weight' => array(
         'description' => t('Order in list'),
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
-      ),
+        ),
       'href' => array(
         'description' => t('Badge description URL'),
         'type' => 'varchar',
         'length' => 255,
         'not null' => FALSE,
         'default' => '',
-      ),
+        ),
       'tid' => array(
         'description' => t('Optional associated taxonomn term id'),
         'type' => 'int',
         'not null' => FALSE,
         'unsigned' => TRUE,
-      ),
+        ),
       'unhideable' => array(
         'description' => t('If this is 1, the badge cannot be hidden by being moved down in weight. It will always show up.'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
+        ),
       'fixedweight' => array(
         'description' => t('If this is 1, the badge cannot have a user assigned weight, regardless of settings.'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
+        ),
       'doesnotcounttolimit' => array(
         'description' => t('If this is 1, the badge does not count towards the limit for number of badges to display per user.'),
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
+        ),
       ),
-    ),
     'primary key' => array('bid'),
     'indexes' => array(
       'bid_weight_name' => array('bid', 'weight', 'name'),
       'weight_name' => array('weight', 'name'),
       'tid_name' => array('tid', 'name'),
-    )
-  );
+      )
+    );
 
   $schema['user_badges_roles'] = array(
     'description' => 'Stores which roles grant which badges.',
@@ -104,16 +104,16 @@ function user_badges_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
+        ),
       'bid' => array(
         'description' => t('Badge ID'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
+        ),
       ),
-    ),
     'primary key' => array('bid', 'rid'),
-  );
+    );
 
   $schema['user_badges_user'] = array(
     'description' => 'Stores which users have which badges.',
@@ -123,37 +123,36 @@ function user_badges_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
+        ),
       'bid' => array(
         'description' => t('Badge ID'),
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
+        ),
       'type' => array(
         'description' => t("Whether set as part of the role, or individually assigned ('user', 'role')"),
         'type' => 'varchar',
         'length' => 20,
         'not null' => TRUE,
         'default' => '',
-      ),
+        ),
       'userweight' => array(
         'description' => t('Order in list, as set by user.'),
         'type' => 'int',
         'not null' => FALSE,
+        ),
       ),
-    ),
     'primary key' => array('bid', 'uid', 'type'),
     'indexes' => array(
       'uid_bid' => array('uid', 'bid'),
-      'uid_weight' => array('uid', 'weight'),
+      'uid_weight' => array('uid', 'userweight'),
       'type' => array('type'),
-    ),
-  );
+      ),
+    );
 
   return $schema;
 }
-
 
 /**
  * Implements hook_install().
@@ -180,7 +179,9 @@ function user_badges_uninstall() {
   if (file_exists($dir)) {
     rmdir($dir);
   }
+
   drupal_uninstall_schema('user_badges');
+
   variable_del('user_badges_showone');
   variable_del('user_badges_showblocked');
   variable_del('user_badges_userweight');
@@ -222,13 +223,7 @@ function user_badges_update_6101() {
 function user_badges_update_6102() {
   $ret = array();
 
-  //We need to modify href to allow longer image urls
-  if ($GLOBALS['db_type'] == 'mysql') {
-    $ret[] = update_sql("ALTER TABLE {user_badges_badges} CHANGE image image varchar(255) default ''");
-  }
-  else { // pgsql
-    db_change_column($ret, 'user_badges_badges', 'image', 'image', 'varchar(255)', array('not null' => FALSE, 'default' => "''"));
-  }
+    db_change_field($ret, 'user_badges_badges', 'image', 'image', 'varchar(255)', array('not null' => FALSE, 'default' => "''"));
 
   //Add the new fields for the on/off checkbox settings
   db_add_field($ret, 'user_badges_badges', 'unhideable', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
