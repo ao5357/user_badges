@@ -286,10 +286,12 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
           '#type' => 'user_profile_category',
           '#title' => t('Badges'),
           '#weight' => 10,
+          '#attributes' => array('class' => 'user-badges'),
         );
         $account->content['user_badges']['badges'] = array(
           '#type' => 'user_profile_item',
           '#value' => theme('user_badge_group', $badgeimgs),
+          '#attributes' => array('class' => 'badges'),
         );
       }
   }
@@ -789,9 +791,11 @@ function user_badges_get_badges($uid, $options = array()) {
       if ( $limit != 0 || $badge->unhideable == 1 ) {
         if ($uid == 'select') {
           $badges[$badge->bid] = $badge->name;
+          $badges[$badge->bid]['#attributes'] = array('class' => 'badge ' . form_clean_id(drupal_strtolower($badge->name)));
         }
         else {
           $badges[$badge->bid] = $badge;
+          $badges[$badge->bid]->class = 'badge ' . form_clean_id(drupal_strtolower($badge->name));
         }
         //Count down our limit, unless the badge doesn't count towards it
         if (!$badge->doesnotcounttolimit) {
@@ -996,10 +1000,10 @@ function theme_user_badge($badge, $account = NULL) {
 
   //If we have a full image URL, don't require theme_image to get the size (it only breaks)
   if (valid_url($badge->image, TRUE)) {
-    $image = theme('image', $badge->image, $badge->name, $badge->name, NULL, FALSE);
+    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class), FALSE);
   }
   else {
-    $image = theme('image', $badge->image, $badge->name, $badge->name);
+    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class));
   }
 
   //We don't link the badge if there is no link and no default, or if the default is overridden
