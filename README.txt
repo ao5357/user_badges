@@ -76,7 +76,11 @@ Display badges
 ==============
 To display user badges in your theme use:
 
-<?php print user_badges_for_uid($uid); ?>
+<?php
+  if (module_exists('user_badges')) {
+    print user_badges_for_uid($uid);
+  }
+?>
 
 Note: $uid means 'a user id' here, not the literal use of $uid. Most people will use
 the uid of the node ($node->uid) or comment ($comment->uid) author.
