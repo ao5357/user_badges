@@ -38,6 +38,10 @@ In order to upload images via the user interface, user badges depends on:
 
 * Upload
 
+For dynamic badge sizing (optional):
+
+* ImageCache
+
 User Product Badges requires:
 
 * ecommerce
@@ -55,7 +59,8 @@ Once the module is activated, go to Administer >> User management >> Badges
     is the place.
 * Roles - Here you can associate a badge with a given role so that all users
     with that role will display the selected badge.
-* Settings - where you can set the global settings for the module.
+* Settings - where you can set the global settings for the module
+    (including whether or not to use ImageCache).
 * Products - This tab is provided by the module User Product Badges. It allows 
     you to associate badges with products for the ecommerce module.
 
