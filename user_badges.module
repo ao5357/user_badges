@@ -753,15 +753,16 @@ function user_badges_user_remove_badge($uid, $bid, $type = NULL) {
  *   returned values for 'select' are just badge names
  */
 function user_badges_get_badges($uid, $options = array()) {
+  static $badges = array(), $past_uid, $past_options;
 
-  static $badges, $past_uid, $past_options;
+  if (isset($badges[$uid])) {
+    return $badges[$uid];
+  }
 
   if (empty($past_uid) || $past_uid !== $uid || $past_options !== $options ) {
     $past_uid = $uid;
-    $badges = array();
     if ($uid == 'all' || $uid == 'select') {
-      $sql = db_query('
-        SELECT b.bid, b.weight, b.name, b.image, b.href,
+      $sql = db_query('SELECT b.bid, b.weight, b.name, b.image, b.href,
         b.unhideable, b.fixedweight, b.doesnotcounttolimit, b.tid
         FROM {user_badges_badges} b
         ORDER BY b.weight, b.name'
@@ -771,8 +772,7 @@ function user_badges_get_badges($uid, $options = array()) {
       $usr = db_result(db_query('SELECT COUNT(uid) FROM {users} WHERE uid = %d AND status = 0', $uid));
 
       if ($usr && variable_get('user_badges_showblocked', 0)) {
-        $sql = db_query('
-          SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
+        $sql = db_query('SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
           b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight, b.tid,
           CASE WHEN b.fixedweight = 1 THEN b.weight ELSE COALESCE(u.userweight,b.weight) END coalescedweight
           FROM {user_badges_badges} b
@@ -784,8 +784,7 @@ function user_badges_get_badges($uid, $options = array()) {
         );
       }
       else {
-        $query = '
-          SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
+        $query = 'SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
           b.unhideable, b.fixedweight, b.doesnotcounttolimit, u.userweight, b.tid,
           CASE WHEN b.fixedweight = 1 THEN b.weight ELSE COALESCE(u.userweight,b.weight) END coalescedweight
           FROM {user_badges_badges} b
@@ -811,12 +810,12 @@ function user_badges_get_badges($uid, $options = array()) {
       //Display the badge if there's no limit or if the badge is unhideable or if we are within our limit
       if ( $limit != 0 || $badge->unhideable == 1 ) {
         if ($uid == 'select') {
-          $badges[$badge->bid] = $badge->name;
-          $badges[$badge->bid]['#attributes'] = array('class' => 'badge ' . form_clean_id(drupal_strtolower($badge->name)));
+          $badges[$uid][$badge->bid] = $badge->name;
+          $badgesV[$badge->bid]['#attributes'] = array('class' => 'badge ' . form_clean_id(drupal_strtolower($badge->name)));
         }
         else {
-          $badges[$badge->bid] = $badge;
-          $badges[$badge->bid]->class = 'badge ' . form_clean_id(drupal_strtolower($badge->name));
+          $badges[$uid][$badge->bid] = $badge;
+          $badges[$uid][$badge->bid]->class = 'badge ' . form_clean_id(drupal_strtolower($badge->name));
         }
         //Count down our limit, unless the badge doesn't count towards it
         if (!$badge->doesnotcounttolimit) {
@@ -826,7 +825,7 @@ function user_badges_get_badges($uid, $options = array()) {
     }
   }
 
-  return $badges;
+  return $badges[$uid];
 }
 
 
