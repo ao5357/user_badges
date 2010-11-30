@@ -223,7 +223,12 @@ function user_badges_update_6101() {
 function user_badges_update_6102() {
   $ret = array();
 
-    db_change_field($ret, 'user_badges_badges', 'image', 'image', 'varchar(255)', array('not null' => FALSE, 'default' => "''"));
+  db_change_field($ret, 'user_badges_badges', 'image', 'image', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'default' => "''",
+    ));
 
   //Add the new fields for the on/off checkbox settings
   db_add_field($ret, 'user_badges_badges', 'unhideable', array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0));
@@ -246,3 +251,22 @@ function user_badges_update_6103() {
 
   return $ret;
 }
+
+
+/**
+ * Implements hook_update_N().
+ * Fix error in 6102.
+ */
+function user_badges_update_6104() {
+  $ret = array();
+
+  db_change_field($ret, 'user_badges_badges', 'image', 'image', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'default' => "''",
+    ));
+
+  return $ret;
+}
+
