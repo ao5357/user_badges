@@ -13,17 +13,13 @@
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
  * @author Richard Skinner (Likeless), http://drupal.org/user/310635
  *
- * @warning For more information on licensing, read the LICENCE.txt file.
- *
  */
-
 
 /**
  * Form builder; list of badges
  */
 function user_badges_badgelist_form() {
-
-  // load the badges that we want to display
+  // Load the badges that we want to display.
   $form['header'] = array('#type' => 'value', '#value' => array(
     array('data' => t('Name'), 'field' => 'name'),
     array('data' => t('Badge')),
@@ -34,7 +30,7 @@ function user_badges_badgelist_form() {
 
   $result = pager_query('SELECT bid, name, image, weight, href FROM {user_badges_badges} ubb '. tablesort_sql($form['header']['#value']), 50 );
 
-  // build a table listing the appropriate badges
+  // Build a table listing the appropriate badges.
   while ($badge = db_fetch_object($result)) {
     $form['name'][$badge->bid] = array('#value' => check_plain($badge->name));
     $form['badge'][$badge->bid] = array('#value' => theme('user_badge', $badge));
@@ -53,7 +49,7 @@ function user_badges_badgelist_form() {
 /**
  * Validate user_badges_badgelist_form form submissions.
  *
- * All weights should be numeric
+ * All weights should be numeric.
  */
 function user_badges_badgelist_form_validate($form, &$form_state) {
   if (isset($form['weight']) && is_array($form['weight'])) {
@@ -68,7 +64,7 @@ function user_badges_badgelist_form_validate($form, &$form_state) {
 /**
  * Process user_badges_badgelist_form form submissions.
  *
- * Update the badge weights
+ * Update the badge weights.
  */
 function user_badges_badgelist_form_submit($form, &$form_state) {
   if (isset($form['weight']) && is_array($form['weight'])) {
@@ -90,8 +86,7 @@ function user_badges_badgelist_form_submit($form, &$form_state) {
  * @ingroup themeable
  */
 function theme_user_badges_badgelist_form($form) {
-
-  //Loop through the array items in the name array to get all the bids for our listed badges
+  // Loop through the array items in the name array to get all the bids for our listed badges.
   if (isset($form['name']) && is_array($form['name'])) {
     foreach (element_children($form['name']) as $key) {
       //We only want bids as values of $key
@@ -99,7 +94,7 @@ function theme_user_badges_badgelist_form($form) {
         continue;
       }
 
-      //Create the rows array for the table theme
+      // Create the rows array for the table theme.
       $row = array();
       $row[] = drupal_render($form['name'][$key]);
       $row[] = drupal_render($form['badge'][$key]);
@@ -109,29 +104,24 @@ function theme_user_badges_badgelist_form($form) {
       $rows[] = $row;
     }
 
-    //Add the submit button
-    $row = array();
-    $row[] = '';
-    $row[] = '';
-    $row[] = drupal_render($form['submit']);
-    $row[] = '';
-    $row[] = '';
-    $rows[] = $row;
-
+    // Add the submit button.
+    $rows[] = array(
+      array('data' => drupal_render($form['submit']), 'align' => 'center', 'colspan' => '20'),
+      );
   }
   else {
     $rows[] = array(array('data' => t('No badges available.'), 'colspan' => '5'));
   }
 
-  //Theme all that we have processed so far into a table
+  // Theme all that we have processed so far into a table.
   $output .= theme('table', $form['header']['#value'], $rows);
 
-  //Create the table's pager
+  // Create the table's pager.
   if ($form['pager']['#value']) {
     $output .= drupal_render($form['pager']);
   }
 
-  //Render any remaining form elements
+  // Render any remaining form elements.
   $output .= drupal_render($form);
 
   return $output;
@@ -141,8 +131,7 @@ function theme_user_badges_badgelist_form($form) {
  * Define the edit form for userbadges.
  */
 function user_badges_edit_form($form_state, $bid = NULL) {
-
-  //If we have been given an existing badge (bid) then get all the badge info into $edit
+  // If we have been given an existing badge (bid) then get all the badge info into $edit.
   if (is_numeric($bid)) {
     $edit = db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
     if (is_numeric($edit->bid)) {
@@ -153,7 +142,7 @@ function user_badges_edit_form($form_state, $bid = NULL) {
     }
   }
 
-  //Are we using a library image or an image URL?
+  // Are we using a library image or an image URL?
   if ( isset($edit) && valid_url($edit->image, TRUE) ) {
     $imageurl = $edit->image;
     $libraryimage = '';
@@ -206,7 +195,7 @@ function user_badges_edit_form($form_state, $bid = NULL) {
     '#default_value' => $edit->href,
   );
 
-  //Tokens help
+  // Tokens help.
   if (module_exists('token')) {
     $form['token_help'] = array(
       '#title' => t('Replacement patterns'),
@@ -234,7 +223,7 @@ function user_badges_edit_form($form_state, $bid = NULL) {
   if (module_exists('taxonomy')) {
     if (variable_get('user_badges_vid', '')) {
       $form['tid'] = taxonomy_form(variable_get('user_badges_vid', ''), $edit->tid);
-      //taxonomy sets the weight to -15, so we should get rid of it to preserve the ordering
+      // Taxonomy sets the weight to -15, so we should get rid of it to preserve the ordering.
       unset($form['tid']['#weight']);
     }
     else {
@@ -293,23 +282,22 @@ function user_badges_edit_form($form_state, $bid = NULL) {
 
 /**
  * Validate user_badges_edit_form form submissions.
- *
  */
 function user_badges_edit_form_validate($form, &$form_state) {
-  //Either a URL or an item from the image library should be selected, but not both
+  // Either a URL or an item from the image library should be selected, but not both.
   if ($form_state['values']['imageurl'] && $form_state['values']['image']) {
     form_set_error('image', t('You cannot both enter an image URL and select an image from the library too. A badge can only have one image.'));
   }
   elseif (!$form_state['values']['imageurl'] && !$form_state['values']['image']) {
-    form_set_error('image', t('You need to either enter an image URL or select an image from the library. Your badge needs an image.'));
+//    form_set_error('image', t('You need to either enter an image URL or select an image from the library. Your badge needs an image.'));
   }
 
-  //The image URL must be a valid url
+  // The image URL must be a valid url.
   if ($form_state['values']['imageurl'] && !valid_url($form_state['values']['imageurl'], TRUE)) {
     form_set_error('imageurl', t('This is not a valid image URL. You need to enter a complete image URL, including the "http://" at the start.'));
   }
 
-  //Weights must be numeric
+  // Weights must be numeric.
   if (!is_numeric($form_state['values']['weight'])) {
     form_set_error('weight', t('Your value for the weight must be a number. Negative numbers are allowed, but not decimals.'));
   }
@@ -327,7 +315,7 @@ function user_badges_edit_form_submit($form, &$form_state) {
 
   $image = $edit->imageurl ? trim($edit->imageurl) : $edit->image;
 
-  //If the badge already exists, delete it and re-insert it
+  // If the badge already exists, delete it and re-insert it.
   if (isset($edit->bid) && preg_match("/^[0-9]+$/D", $edit->bid)) {
     db_query('DELETE FROM {user_badges_badges} WHERE bid = %d', $edit->bid);
     $result = db_query("
@@ -336,7 +324,7 @@ function user_badges_edit_form_submit($form, &$form_state) {
       $edit->bid, trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid
     );
   }
-  //If the badge does not already exist, create it anew
+  // If the badge does not already exist, create it anew.
   else {
     $result = db_query("
       INSERT INTO {user_badges_badges} (name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid)
@@ -445,7 +433,7 @@ function user_badges_hold_temporary_file($file = NULL) {
  */
 function user_badges_images_form_submit($form, &$form_state) {
   $op = $form_state['clicked_button']['#value'];
-  // Save uploaded files
+  // Save uploaded files.
   if ($op == t('Upload')) {
     $file = $form_state['values']['file_image'];
     file_set_status($file, FILE_STATUS_PERMANENT);
@@ -506,7 +494,8 @@ function user_badges_roles_form() {
   );
 
   foreach ($roles as $rid => $role) {
-    if ($rid != 1) { // no badges for the anonymous role
+    // No badges for the anonymous role.
+    if ($rid != 1) { 
       $form['roles'][$rid] = array(
         '#type' => 'textfield',
         '#title' => $role,
@@ -530,10 +519,10 @@ function user_badges_roles_form() {
  */
 function user_badges_roles_form_validate($form, &$form_state) {
   $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
-  //Go through all the entries and make sure they all have a valid badge ID
+  // Go through all the entries and make sure they all have a valid badge ID.
   foreach ($array as $field => $value) {
     if (!empty($value)) {
-      //The field isn't empty, so we should validate it
+      // The field isn't empty, so we should validate it.
       $validation = user_badges_badge_autocomplete_validation($value);
       //Is it correctly formatted?
       if ($validation[1] == 'string') {
@@ -544,7 +533,7 @@ function user_badges_roles_form_validate($form, &$form_state) {
           form_set_error('roles]['. $field, t('"@value" is not a valid badge name. Try using the autocomplete function (requires javascript).', array('@value' => $value)));
         }
       }
-      //The format was correct, but we need to check the bid exists
+      // The format was correct, but we need to check the bid exists.
       elseif ($validation[1] == 'nobid') {
         if ($field == 0) {
           form_set_error('blocked]['. $field, t('@value is not a valid badge ID. Try using the autocomplete function (requires javascript).', array('@value' => $validation[0])));
@@ -563,9 +552,9 @@ function user_badges_roles_form_validate($form, &$form_state) {
 function user_badges_roles_form_submit($form, &$form_state) {
   $array = $form_state['values']['roles'] + $form_state['values']['blocked'];
   foreach ($array as $field => &$value) {
-    //We now have a string as our badge, so just extract the bid
+    // We now have a string as our badge, so just extract the bid.
     preg_match('/\('. t('Badge ID') .' (\d+)\)/', $value, $matches);
-    //Transform our value into just the bid
+    // Transform our value into just the bid.
     $value = $matches[1];
   }
   user_badges_save_roles($array);
@@ -623,6 +612,15 @@ function user_badges_settings_form() {
     $form['imagecache'] = array('#type' => 'value', '#value' => 0);
   }
 
+  $form['nobadges'] = array(
+    '#type' => 'textfield',
+    '#title' => t('"No badges" message'),
+    '#size' => 60,
+    '#maxlength' => 500,
+    '#default_value' => variable_get('user_badges_nobadges', ''),
+    '#description' => t('This provides this message if the user has no badges, rather than nothing. Leave it blank for no message.'),
+    );
+
   $form['defaulthref'] = array(
     '#type' => 'textfield',
     '#title' => t('Default badge link URL'),
@@ -651,7 +649,7 @@ function user_badges_settings_form() {
       );
   }
 
-  //Let the user select a vocabulary to associate with badges
+  // Let the user select a vocabulary to associate with badges.
   if (module_exists('taxonomy')) {
     //Build the options for the element
     $vocabs = taxonomy_get_vocabularies();
@@ -678,7 +676,7 @@ function user_badges_settings_form() {
  * validate user_badges_settings_form input
  */
 function user_badges_settings_form_validate($form, $form_state) {
-  //'showone' must be numeric
+  // 'showone' must be numeric.
   if ( !is_numeric($form_state['values']['showone']) || $form_state['values']['showone'] < 0 ) {
     form_set_error('showone', t('Must be a positive number.'));
   }
@@ -694,13 +692,14 @@ function user_badges_settings_form_submit($form, $form_state) {
   variable_set('user_badges_showblocked', $form_state['values']['showblocked']);
   variable_set('user_badges_userweight', $form_state['values']['userweight']);
   variable_set('user_badges_imagecache', $form_state['values']['imagecache']);
+  variable_set('user_badges_nobadges', $form_state['values']['nobadges']);
 
-  //Only set a defaulthref if we have some non-whitespace in there
+  // Only set a default href if we have some non-whitespace in there.
   if (preg_match("/\S/", $form_state['values']['defaulthref'])) {
     variable_set('user_badges_defaulthref', $form_state['values']['defaulthref']);
   }
 
-  //Only set a vid if we have a value, otherwise wipe it for none/no taxonomy
+  // Only set a vid if we have a value, otherwise wipe it for none/no taxonomy.
   if ($form_state['values']['vid']) {
     variable_set('user_badges_vid', $form_state['values']['vid']);
   }

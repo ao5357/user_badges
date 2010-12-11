@@ -1,8 +1,6 @@
 <?php
 // $Id$
 
-// #585946 by NancyDru for robphillips - Static cache user badges to avoid queries.
-// #918846 by NancyDru for jeeba - Allow Imagecache to be used.
 
 /**
  * @file
@@ -61,7 +59,11 @@ function user_badges_help($path, $arg) {
  * Implements hook_perm().
  */
 function user_badges_perm() {
-  return array('manage badges', 'change badge assignments');
+  return array(
+    'manage badges',
+    'change badge assignments',
+    'show badges in user profile'
+  );
 }
 
 /**
@@ -147,7 +149,7 @@ function user_badges_menu() {
     'title' => 'Badges',
     'page callback' => 'user_badges_userweight_page',
     'page arguments' => array(1),
-    'access callback' => TRUE,
+    'access arguments' => array('show badges in user profile'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
     );
@@ -156,7 +158,7 @@ function user_badges_menu() {
     'title' => 'List',
     'page callback' => 'user_badges_userweight_page',
     'page arguments' => array(1),
-    'access callback' => TRUE,
+    'access arguments' => array('show badges in user profile'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
     );
@@ -416,7 +418,6 @@ function user_badges_userweight_form_submit($form, &$form_state) {
  * Form theming function
  */
 function theme_user_badges_userweight_form($form) {
-
   //Loop through the array items in the name array to get all the bids for our listed badges
   if (isset($form['name']) && is_array($form['name'])) {
     foreach (element_children($form['name']) as $key) {
@@ -759,14 +760,16 @@ function user_badges_get_badges($uid, $options = array()) {
     return $badges[$uid];
   }
 
+  // Do this so we don't return NULL.
+  $badges[$uid] = array();
+
   if (empty($past_uid) || $past_uid !== $uid || $past_options !== $options ) {
     $past_uid = $uid;
     if ($uid == 'all' || $uid == 'select') {
       $sql = db_query('SELECT b.bid, b.weight, b.name, b.image, b.href,
         b.unhideable, b.fixedweight, b.doesnotcounttolimit, b.tid
         FROM {user_badges_badges} b
-        ORDER BY b.weight, b.name'
-      );
+        ORDER BY b.weight, b.name');
     }
     else {
       $usr = db_result(db_query('SELECT COUNT(uid) FROM {users} WHERE uid = %d AND status = 0', $uid));
@@ -780,8 +783,7 @@ function user_badges_get_badges($uid, $options = array()) {
             INNER JOIN {user_badges_roles} r ON b.bid = r.bid
           WHERE u.uid = %d AND r.rid = 0
           ORDER BY coalescedweight, b.name',
-          $uid
-        );
+          $uid);
       }
       else {
         $query = 'SELECT DISTINCT b.bid, b.weight, b.name, b.image, b.href,
@@ -797,21 +799,21 @@ function user_badges_get_badges($uid, $options = array()) {
       }
     }
 
-    //Should we limit the badges returned?
-    if ( !$options['nolimit'] && variable_get('user_badges_showone', 0)) {
+    // Should we limit the badges returned?
+    if (!$options['nolimit'] && variable_get('user_badges_showone', 0)) {
       $limit = variable_get('user_badges_showone', 1);
     }
     else {
-      //Set to -1 for no limit
+      // Set to -1 for no limit.
       $limit = -1;
     }
 
     while ($badge = db_fetch_object($sql)) {
-      //Display the badge if there's no limit or if the badge is unhideable or if we are within our limit
-      if ( $limit != 0 || $badge->unhideable == 1 ) {
+      // Display the badge if there's no limit or if the badge is unhideable or if we are within our limit.
+      if ($limit != 0 || $badge->unhideable == 1) {
         if ($uid == 'select') {
           $badges[$uid][$badge->bid] = $badge->name;
-          $badgesV[$badge->bid]['#attributes'] = array('class' => 'badge ' . form_clean_id(drupal_strtolower($badge->name)));
+          $badges[$badge->bid]['#attributes'] = array('class' => 'badge ' . form_clean_id(drupal_strtolower($badge->name)));
         }
         else {
           $badges[$uid][$badge->bid] = $badge;
@@ -986,14 +988,23 @@ function user_badges_for_uid($uid, $refresh = FALSE) {
  */
 function user_badges_for_user($array) {
   $account = user_load($array);
+
   foreach ((array)$account->badges as $badge) {
     $badges[] = theme('user_badge', $badge, $account);
   }
+
   if ($badges) {
     return theme('user_badge_group', $badges);
   }
   else {
-    return FALSE;
+    // Do we have a "no badges" message?
+    if ($nobadges = variable_get('user_badges_nobadges', '')) {
+      $nobadges = '<div class="user_badges_no_badges">' . filter_xss_admin(t($nobadges)) . '</div>';
+      return theme('user_badge_group', array($nobadges));
+    }
+    else {
+      return FALSE;
+    }
   }
 }
 
@@ -1018,16 +1029,16 @@ function theme_user_badge($badge, $account = NULL) {
     $account = $user;
   }
 
-  //If we have a full image URL, don't require theme_image to get the size (it only breaks)
-  $get_size = valid_url($badge->image, TRUE);
   if (variable_get('user_badges_imagecache', 0)) {
     $image = theme('imagecache', 'user-badges', $badge->image, $badge->name, $badge->name, array('class' => $badge->class));
   }
   else {
+    // If we have a full image URL, don't require theme_image to get the size (it only breaks).
+    $get_size = valid_url($badge->image, TRUE);
     $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class), !get_size);
   }
 
-  //We don't link the badge if there is no link and no default, or if the default is overridden
+  // We don't link the badge if there is no link and no default, or if the default is overridden.
   if (
     ($badge->href == "" && !variable_get('user_badges_defaulthref', ''))
     || drupal_strtolower($badge->href) == '<none>') {
@@ -1042,7 +1053,20 @@ function theme_user_badge($badge, $account = NULL) {
       $href = token_replace($href, $type = 'user', $object = $account);
     }
 
-    return l($image, $href, array('html' => TRUE));
+    $pieces = parse_url($href);
+    $pieces['html'] = TRUE;
+    if (isset($pieces['scheme'])) {
+      $pieces['path'] = $pieces['scheme'] . '://' . $pieces['host'] . $pieces['path'];
+    }
+    if (isset($pieces['query'])) {
+      $pieces['query'] = array($pieces['query'], drupal_get_destination());
+    }
+    else {
+      $pieces['query'] = drupal_get_destination();
+    }
+
+    return l($image, $pieces['path'], $pieces);
+//    return l($image, $href, array('html' => TRUE));
   }
 }
 
@@ -1213,7 +1237,6 @@ function user_badges_token_list($type = 'all') {
     return $tokens;
   }
 }
-
 
 /**
  * Implements hook_cron()
