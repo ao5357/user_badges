@@ -289,7 +289,7 @@ function user_badges_edit_form_validate($form, &$form_state) {
     form_set_error('image', t('You cannot both enter an image URL and select an image from the library too. A badge can only have one image.'));
   }
   elseif (!$form_state['values']['imageurl'] && !$form_state['values']['image']) {
-//    form_set_error('image', t('You need to either enter an image URL or select an image from the library. Your badge needs an image.'));
+    form_set_error('image', t('You need to either enter an image URL or select an image from the library. Your badge needs an image.'));
   }
 
   // The image URL must be a valid url.
