@@ -12,8 +12,7 @@
  * @author Heine Deelstra (Heine), http://drupal.org/user/17943
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
  * @author Richard Skinner (Likeless), http://drupal.org/user/310635
- *
- * @warning For more information on licensing, read the LICENCE.txt file.
+ * @author Nancy Wichmann (NancyDru), http://drupal.org/user/101412
  *
  */
 
@@ -529,23 +528,23 @@ function user_badges_page($uid) {
  * Define the page on user/uid/badges.
  */
 function user_badges_userweight_page($uid) {
-  global $user;
   $account = user_load($uid);
 
   drupal_set_title(t('Badges for %user_name', array('%user_name' => $account->name)));
 
-  //Do we have the right to rearrange badges?
+  // Do we have the right to rearrange badges?
   if (variable_get('user_badges_userweight', 0) && ($account->uid == $user->uid || user_access('change badge assignments')) ) {
     //If the setting allows it and we are the badge owner or somebody with permission, yes.
     return drupal_get_form('user_badges_userweight_form', $account);
   }
   else {
-    //Otherwise, just list the badges on the page
+    // Otherwise, just list the badges on the page.
     $user_badges = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
     foreach ((array)$user_badges as $badge) {
       $badges[] = theme('user_badge', $badge, $account);
     }
     if ($badges) {
+      $badges = array(theme('item_list', $badges));
       return theme('user_badge_group', $badges);
     }
     else {
@@ -980,16 +979,21 @@ function user_badges_for_uid($uid, $refresh = FALSE) {
 }
 
 /**
- * Returns HTML representation of user badges for given user
- * $array is array defining criteria for user_load()
- * most common use will be:
+ * Get all user badges for a user.
+ * @param $load is array defining criteria for user_load().
+ *   The most common use will be:
  *   user_badges_for_user(array('uid'=>123));
+ * @return string containing HTML representation of user badges for given user.
  */
-function user_badges_for_user($array) {
-  $account = user_load($array);
+function user_badges_for_user($load, $list = FALSE) {
+  $account = user_load($load);
 
   foreach ((array)$account->badges as $badge) {
     $badges[] = theme('user_badge', $badge, $account);
+  }
+  
+  if ($list) {
+    $badges = array(theme('item_list', $badges));
   }
 
   if ($badges) {
@@ -1034,7 +1038,7 @@ function theme_user_badge($badge, $account = NULL) {
   else {
     // If we have a full image URL, don't require theme_image to get the size (it only breaks).
     $get_size = valid_url($badge->image, TRUE);
-    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class), !get_size);
+    $image = theme('image', $badge->image, $badge->name, $badge->name, array('class' => $badge->class), !$get_size);
   }
 
   // We don't link the badge if there is no link and no default, or if the default is overridden.
@@ -1216,6 +1220,7 @@ function user_badges_remove_badge_action_submit($form, $form_state) {
 
 /**
  * Implements hook_token_values().
+ * @TODO: Add tokens for Submitted By module?
  */
 function user_badges_token_values($type, $object = NULL) {
   if ($type == 'userbadge') {
@@ -1234,6 +1239,89 @@ function user_badges_token_list($type = 'all') {
     $tokens['userbadge']['userbadge-name'] = t("The badge name");
     $tokens['userbadge']['userbadge-bid'] = t("The badge id number (bid)");
     return $tokens;
+  }
+}
+/**
+ * Implements hook_block();
+ */
+function user_badges_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      return user_badges_block_list();
+
+    case 'view':
+      return user_badges_block_view($delta);
+
+    case 'configure':
+      return user_badges_block_configure($delta);
+
+    case 'save':
+      return user_badges_block_save($delta, $edit);
+  }
+}
+
+/**
+ * Function for user_badges_block(op = 'list').
+ */
+function user_badges_block_list() {
+  return array(
+    'current_node' => array('info' => t('User_Badges: Content Author'), 'cache' => BLOCK_NO_CACHE),
+    );
+}
+
+/**
+ * Function for user_badges_block(op = 'view').
+ */
+function user_badges_block_view($delta = 0) {
+  $block = array();
+
+  switch ($delta) {
+    case 'current_node':
+      $arg2 = arg(2);
+      if (arg(0) == 'node' && is_numeric(arg(1)) && empty($arg2)) {
+        $node = menu_get_object();
+        if (in_array($node->type, variable_get('user_badges_current_node_types', array()))) {
+          $badges = user_badges_for_user(array('uid' => $node->uid));
+          $account = user_load(array('uid' => $node->uid));
+          $block['title'] = t("@name's Badges", array('@name' => $account->name));
+          $block['content'] = $badges;
+        }
+      }
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Function for user_badges_block(op = 'configure').
+ */
+function user_badges_block_configure($delta = 0) {
+  $form = array();
+
+  switch ($delta) {
+    case 'current_node':
+      $form['types'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Show on these content types'),
+        '#default_value' => variable_get('user_badges_current_node_types', array()),
+        '#options' => node_get_types('names'),
+        '#attributes' => array('class' => 'container-inline'),
+        );
+      break;
+  }
+
+  return $form;
+}
+
+/**
+ * Function for user_badges_block(op = 'save').
+ */
+function user_badges_block_save($delta = 0, $edit = array()) {
+  switch ($delta) {
+    case 'current_node':
+      variable_set('user_badges_current_node_types', array_filter($edit['types']));
+      return;
   }
 }
 

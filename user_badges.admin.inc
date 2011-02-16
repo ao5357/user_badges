@@ -677,7 +677,7 @@ function user_badges_settings_form() {
  */
 function user_badges_settings_form_validate($form, $form_state) {
   // 'showone' must be numeric.
-  if ( !is_numeric($form_state['values']['showone']) || $form_state['values']['showone'] < 0 ) {
+  if (!is_numeric($form_state['values']['showone']) || $form_state['values']['showone'] < 0 ) {
     form_set_error('showone', t('Must be a positive number.'));
   }
 }
@@ -695,7 +695,11 @@ function user_badges_settings_form_submit($form, $form_state) {
   variable_set('user_badges_nobadges', $form_state['values']['nobadges']);
 
   // Only set a default href if we have some non-whitespace in there.
-  if (preg_match("/\S/", $form_state['values']['defaulthref'])) {
+  $defaulthref = trim($form_state['values']['defaulthref']);
+  if (empty($defaulthref)) {
+    variable_del('user_badges_defaulthref');
+  }
+  else {
     variable_set('user_badges_defaulthref', $form_state['values']['defaulthref']);
   }
 
