@@ -1112,12 +1112,6 @@ function theme_user_badge($badge, $account = NULL) {
     if (isset($pieces['scheme'])) {
       $pieces['path'] = $pieces['scheme'] . '://' . $pieces['host'] . $pieces['path'];
     }
-    if (isset($pieces['query'])) {
-      $pieces['query'] = array($pieces['query'], drupal_get_destination());
-    }
-    else {
-      $pieces['query'] = drupal_get_destination();
-    }
 
     return l($image, $pieces['path'], $pieces);
   }
