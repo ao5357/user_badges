@@ -36,8 +36,8 @@ function user_badges_help($path, $arg) {
     case 'user/%/badges':
     case 'user/%/badges/list':
       $showone = variable_get('user_badges_showone', 0);
-      if ( variable_get('user_badges_userweight', 0) && ($user->uid == $arg[1] || user_access('change badge assignments')) ) {
-        //Help messages for users who can reorder
+      if (variable_get('user_badges_userweight', 0) && ($user->uid == $arg[1] || user_access('change badge assignments')) ) {
+        // Help messages for users who can reorder.
         if ($showone) {
           return t("You can reorder badges here. Some badges may not appear on the list; these badges cannot be reordered. Only the top !number badges will be shown publicly.", array('!number' => $showone));
         }
@@ -46,8 +46,8 @@ function user_badges_help($path, $arg) {
         }
       }
       else {
-        //Either we don't support reordering, or this user lacks the permission to do it
-        return t("These are all the badges owned by this user.");
+        // Either we don't support reordering, or this user lacks the permission to do it.
+//        return t("These are all the badges owned by this user.");
       }
 
   }
@@ -196,29 +196,34 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
       if (isset($badges[$account->uid])) {
         $account->badges = $badges[$account->uid];
       }
+      else {
+        $account->badges = array();
+      }
 
       if ($account->uid > 0) {
-        //Get all user badges for this user, regardless of whether we filter the ones we show.
+        // Get all user badges for this user, regardless of whether we filter the ones we show.
         $account->badges_all = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
 
-        //Now make the array of badges we will show.
+        // Now make the array of badges we will show.
         if (variable_get('user_badges_showone', 0)) {
-          //Figure out our limit to the number of badges
+          // Figure out our limit to the number of badges.
           if (variable_get('user_badges_showone', 0)) {
             $limit = variable_get('user_badges_showone', 1);
           }
           else {
-            //Set to -1 for no limit
+            // Set to -1 for no limit.
             $limit = -1;
           }
-          //Loop through all potential badges and get the ones we can show
-          foreach ($account->badges_all as $bid => $badge) {
-            //Display the badge if there's no limit or if the badge is unhideable or if we are within our limit
-            if ( $limit != 0 || $badge->unhideable == 1 ) {
-              $account->badges[$bid] = $badge;
-              //Count down our limit, unless the badge doesn't count towards it
-              if (!$badge->doesnotcounttolimit) {
-                $limit--;
+          // Loop through all potential badges and get the ones we can show.
+          if ($account->badges_all) {
+            foreach ($account->badges_all as $bid => $badge) {
+              // Display the badge if there's no limit or if the badge is unhideable or if we are within our limit.
+              if ($limit != 0 || $badge->unhideable == 1) {
+                $account->badges[$bid] = $badge;
+                // Count down our limit, unless the badge doesn't count towards it.
+                if (!$badge->doesnotcounttolimit) {
+                  $limit--;
+                }
               }
             }
           }
@@ -227,6 +232,7 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
           $account->badges = $account->badges_all;
         }
       }
+
       $badges[$account->uid] = $account->badges;
       break;
 
@@ -534,12 +540,13 @@ function user_badges_userweight_page($uid) {
 
   // Do we have the right to rearrange badges?
   if (variable_get('user_badges_userweight', 0) && ($account->uid == $user->uid || user_access('change badge assignments')) ) {
-    //If the setting allows it and we are the badge owner or somebody with permission, yes.
+    // If the setting allows it and we are the badge owner or somebody with permission, yes.
     return drupal_get_form('user_badges_userweight_form', $account);
   }
   else {
     // Otherwise, just list the badges on the page.
     $user_badges = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
+    $badges = array();
     foreach ((array)$user_badges as $badge) {
       $badges[] = theme('user_badge', $badge, $account);
     }
@@ -991,7 +998,7 @@ function user_badges_for_user($load, $list = FALSE) {
   foreach ((array)$account->badges as $badge) {
     $badges[] = theme('user_badge', $badge, $account);
   }
-  
+
   if ($list) {
     $badges = array(theme('item_list', $badges));
   }
