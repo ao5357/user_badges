@@ -12,6 +12,7 @@
  * @author Heine Deelstra (Heine), http://drupal.org/user/17943
  * @author Nuno Veloso (nunoveloso18), http://drupal.org/user/80656
  * @author Richard Skinner (Likeless), http://drupal.org/user/310635
+ * @author Nancy Wichmann (NancyDru), http://drupal.org/user/101412
  *
  */
 
@@ -32,6 +33,7 @@ function user_badges_badgelist_form() {
 
   // Build a table listing the appropriate badges.
   while ($badge = db_fetch_object($result)) {
+    $badge->class = 'badge ' . _user_badges_class($badge);
     $form['name'][$badge->bid] = array('#value' => check_plain($badge->name));
     $form['badge'][$badge->bid] = array('#value' => theme('user_badge', $badge));
     $form['weight'][$badge->bid] = array('#type' => 'textfield', '#size' => 4, '#maxlength' => 255, '#default_value' => $badge->weight );
@@ -86,6 +88,8 @@ function user_badges_badgelist_form_submit($form, &$form_state) {
  * @ingroup themeable
  */
 function theme_user_badges_badgelist_form($form) {
+  $output = '';
+
   // Loop through the array items in the name array to get all the bids for our listed badges.
   if (isset($form['name']) && is_array($form['name'])) {
     foreach (element_children($form['name']) as $key) {
@@ -465,7 +469,8 @@ function user_badges_image_delete($to_delete) {
  * form to associated badges with roles
  */
 function user_badges_roles_form() {
-  $roles = user_roles();
+  // No badges for the anonymous role.
+  $roles = user_roles(TRUE);
   $badges = user_badges_get_roles(NULL, array('returnbadges' => TRUE));
 
   $form['blocked'] = array(
@@ -482,7 +487,7 @@ function user_badges_roles_form() {
     '#maxlength' => 255,
     '#autocomplete_path' => 'user_badges/autocomplete',
     '#default_value' => isset($badges[0]) ? $badges[0]->name . ' ' . t('(Badge ID') . ' ' . $badges[0]->bid .')' : '',
-    '#field_suffix' => isset($badges[0]) ? ' ' . t('Current:') . ' ' . theme('image', $badges[0]->image, $badges[0]->image, $badges[0]->image) : '',
+    '#field_suffix' => isset($badges[0]) ? ' ' . t('Current:') . ' ' . $badges[0]->image : '',
   );
 
   $form['roles'] = array(
@@ -494,19 +499,18 @@ function user_badges_roles_form() {
   );
 
   foreach ($roles as $rid => $role) {
-    // No badges for the anonymous role.
-    if ($rid != 1) { 
-      $form['roles'][$rid] = array(
-        '#type' => 'textfield',
-        '#title' => $role,
-        '#size' => 40,
-        '#maxlength' => 255,
-        '#autocomplete_path' => 'user_badges/autocomplete',
-        '#default_value' => isset($badges[$rid]) ? $badges[$rid]->name . ' ' . t('(Badge ID') . ' ' . $badges[$rid]->bid .')' : '',
-        '#field_suffix' => isset($badges[$rid]) ? ' ' . t('Current:') . ' ' . theme('image', $badges[$rid]->image, $badges[$rid]->image, $badges[$rid]->image) : '',
+    $form['roles'][$rid] = array(
+      '#type' => 'textfield',
+      '#title' => $role,
+      '#maxlength' => 255,
+      '#autocomplete_path' => 'user_badges/autocomplete',
+      '#default_value' => isset($badges[$rid]) ? $badges[$rid]->name . ' '
+        . t('(Badge ID') . ' ' . $badges[$rid]->bid .')' : '',
+      '#field_suffix' => isset($badges[$rid]) ?
+        ' ' . t('Current:') . ' ' . $badges[$rid]->image : '',
       );
-    }
   }
+
   $form[] = array(
     '#type' => 'submit',
     '#value' => t('Save Role Badges'),
