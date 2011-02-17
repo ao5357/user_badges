@@ -195,30 +195,23 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
       // Have we loaded this user before?
       if (isset($badges[$account->uid])) {
         $account->badges = $badges[$account->uid];
+        break;
       }
-      else {
-        $account->badges = array();
-      }
+
+      $account->badges = array();
 
       if ($account->uid > 0) {
         // Get all user badges for this user, regardless of whether we filter the ones we show.
         $account->badges_all = user_badges_get_badges($account->uid, array('nolimit' => TRUE));
 
         // Now make the array of badges we will show.
-        if (variable_get('user_badges_showone', 0)) {
-          // Figure out our limit to the number of badges.
-          if (variable_get('user_badges_showone', 0)) {
-            $limit = variable_get('user_badges_showone', 1);
-          }
-          else {
-            // Set to -1 for no limit.
-            $limit = -1;
-          }
+        $account->badges = $account->badges_all;
+        if ($limit = variable_get('user_badges_showone', 0)) {
           // Loop through all potential badges and get the ones we can show.
-          if ($account->badges_all) {
+//          if ($account->badges_all) {
             foreach ($account->badges_all as $bid => $badge) {
               // Display the badge if there's no limit or if the badge is unhideable or if we are within our limit.
-              if ($limit != 0 || $badge->unhideable == 1) {
+              if ($limit > 0 || $badge->unhideable == 1) {
                 $account->badges[$bid] = $badge;
                 // Count down our limit, unless the badge doesn't count towards it.
                 if (!$badge->doesnotcounttolimit) {
@@ -226,11 +219,11 @@ function user_badges_user($op, &$edit, &$account, $category = 'account') {
                 }
               }
             }
-          }
+//          }
         }
-        else {
-          $account->badges = $account->badges_all;
-        }
+//        else {
+//          $account->badges = $account->badges_all;
+//        }
       }
 
       $badges[$account->uid] = $account->badges;
