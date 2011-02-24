@@ -493,7 +493,7 @@ function user_badges_badge_autocomplete($string = '') {
     $trimstring = trim($searchstring[0]);
     $result = db_query_range("SELECT * FROM {user_badges_badges} WHERE name LIKE '%%%s%%'", $trimstring, 0, 10);
     while ($badge = db_fetch_object($result)) {
-      $matches[$badge->name . ' ' . t('(Badge ID') . ' ' . $badge->bid .')'] = check_plain($badge->name) . ' ' . theme('user_badge', $badge);
+      $matches[$badge->name . ' (' . t('Badge ID') . ' ' . $badge->bid .')'] = check_plain($badge->name) . ' ' . theme('user_badge', $badge);
     }
   }
 
