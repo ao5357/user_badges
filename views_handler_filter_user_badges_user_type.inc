@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  * A handler to provide filtering of views by badge type

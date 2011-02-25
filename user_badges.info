@@ -1,4 +1,3 @@
-; $Id$
 
 name = User badges
 description = Enables assignment of graphical badges to users and roles.
