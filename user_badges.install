@@ -60,7 +60,13 @@ function user_badges_schema() {
         'default' => '',
         ),
       'tid' => array(
-        'description' => t('Optional associated taxonomn term id'),
+        'description' => t('Optional associated taxonomy term id'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+        ),
+      'vid' => array(
+        'description' => t('Optional associated taxonomy vocabulary id'),
         'type' => 'int',
         'not null' => FALSE,
         'unsigned' => TRUE,
@@ -117,6 +123,12 @@ function user_badges_schema() {
   $schema['user_badges_user'] = array(
     'description' => 'Stores which users have which badges.',
     'fields' => array(
+      'ubid' => array(
+        'description' => t('User Badge ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        ),
       'uid' => array(
         'description' => t('User ID'),
         'type' => 'int',
@@ -141,8 +153,15 @@ function user_badges_schema() {
         'type' => 'int',
         'not null' => FALSE,
         ),
+      'earned' => array(
+        'description' => t('Timestamp when badge was earned.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        ),
       ),
-    'primary key' => array('bid', 'uid', 'type'),
+    'primary key' => array('ubid'),
     'indexes' => array(
       'uid_bid' => array('uid', 'bid'),
       'uid_weight' => array('uid', 'userweight'),
@@ -269,3 +288,22 @@ function user_badges_update_6104() {
   return $ret;
 }
 
+/**
+ * Implements hook_update_N().
+ * Adds badge timestamp
+ */
+function user_badges_update_6105() {
+  $ret = array();
+  // 'earned' field
+  db_add_field($ret, 'user_badges_user', 'earned', array('description' => 'Timestamp when badge was earned.','type' => 'int','unsigned' => TRUE,'not null' => TRUE,'default' => 0));
+  db_add_index($ret, 'user_badges_user', 'earned', array('earned'));
+
+  // 'vid' field
+  db_add_field($ret, 'user_badges_badges', 'vid', array('description' => t('Optional associated taxonomy vocabulary id'), 'type' => 'int', 'not null' => FALSE, 'unsigned' => TRUE));
+  db_add_index($ret, 'user_badges_badges', 'vid', array('vid'));
+
+  // 'ubid' primary key for multiple of the same badge per user
+  db_drop_primary_key($ret, 'user_badges_user');
+  db_add_field($ret, 'user_badges_user', 'ubid', array('type' => 'serial','unsigned' => TRUE,'not null' => TRUE), array('primary key' => array('ubid')));
+  return $ret;
+}

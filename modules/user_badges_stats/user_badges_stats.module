@@ -1,0 +1,224 @@
+<?php
+
+/**
+ * @file
+ * @brief User Badge Stats module
+ *
+ * Module intentionally mirrors (and makes use of) the user_stats module [and tables]. 
+ * When that module's hooks are mature enough, this can be ported directly to their API.
+ *
+ * @author Brad Czerniak (ao5357), http://drupal.org/user/313975
+ */
+
+/**
+ * Returns user badge stats for a user.
+ *
+ * @param $type The key for the statistic to return. For now:
+ *  - 'badge_count'
+ *  - 'badges_week'
+ * @param $uid The user id whose stats should be retrieved.
+ * @return The statistic requested.
+ */
+function user_badges_stats_get_stats($type, $uid) {
+  if (!is_numeric($uid) || !user_access('View statistics')) {
+    return FALSE;
+  }
+
+  // Check cache first.
+  if (user_stats_cache_get($type, $uid) !== FALSE) {
+    return user_stats_cache_get($type, $uid);
+  }
+
+  switch ($type) {
+    case 'badge_count':
+      if (!user_stats_isset('badge_count', $uid)) {
+        user_badges_stats_badge_count_update('reset', $uid);
+      }
+      $query = db_query("SELECT value FROM {user_stats_values} WHERE name = 'badge_count' AND uid = %d", $uid);
+      $data = db_result($query);
+      break;
+    case 'badges_week':
+      if (!user_stats_isset('badges_week', $uid)) {
+        user_badges_stats_badges_week_update('reset', $uid);
+      }
+      $query = db_query("SELECT value FROM {user_stats_values} WHERE name = 'badges_week' AND uid = %d", $uid);
+      $data = db_result($query);
+      break;
+    default:
+      // Raise an error if the statistic doesn't exist.
+      drupal_set_message(t('Statistic @type does not exist.', array('@type' => $type)), $type = 'error');
+      return;
+  }
+
+  user_stats_cache_set($type, $uid, $data);
+  return $data;
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function user_badges_stats_cron() {
+  // Table maintenance for badges_week
+  $week_stamp = _user_badges_stats_week_stamp();
+  $time = time();
+  $last_run = variable_get('user_badges_stats_weekly_run', 1);
+  if(($time - $last_run) > 603000) {
+    // Rules integration
+    if (module_exists('rules')) {
+      $top_weekly = db_fetch_object(db_query("SELECT uid, value FROM {user_stats_values} WHERE name='badges_week' ORDER BY value DESC LIMIT 0,1"));
+      if($top_weekly->value >= 1) {
+        $arguments = array('user' => user_load($top_weekly->uid), 'number' => $top_weekly->value);
+        rules_invoke_event('user_badges_stats_top_weekly', $arguments);
+        }
+    }
+
+    db_query("UPDATE {user_stats_values} SET value = 0 WHERE name = 'badges_week'");
+    variable_set('user_badges_stats_weekly_run', $week_stamp);
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function user_badges_stats_user($op, &$edit, &$account, $category = 'account') {
+  switch ($op) {
+    case 'login':
+      // If a user's badges haven't been counted yet, count them
+      if (!user_stats_isset('badge_count', $account->uid)) {
+        user_badges_stats_badge_count_update('reset', $account->uid);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_token_list().
+ */
+function user_badges_stats_token_list($type = 'all') {
+  if ($type == 'user' || $type == 'all') {
+    $tokens['user']['badge_count'] = t('Total number of badges the user has earned');
+    $tokens['user']['badges_week'] = t('Number of badges earned this week');
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_token_values().
+ */
+function user_badges_stats_token_values($type, $object = NULL) {
+  if ($type == 'user' || $type == 'all') {
+    if (isset($object)) {
+      $uid = $object->uid;
+    }
+    else {
+      global $user;
+      $uid = $user->uid;
+    }
+
+    $values['badge_count'] = check_plain(user_badges_stats_get_stats('badge_count', $uid));
+    $values['badges_week'] = check_plain(user_badges_stats_get_stats('badges_week', $uid));
+    return $values;
+  }
+}
+
+/**
+ * Manage the badge count of a given user.
+ *
+ * @param $op The operation to perform on the count: increment, decrement, reset
+ * @param $uid User id that should be updated.
+ */
+function user_badges_stats_badge_count_update($op, $uid) {
+  if (!is_numeric($uid)) {
+    return;
+  }
+
+  switch ($op) {
+    case 'increment':
+      if (user_stats_isset('badge_count', $uid)) {
+        db_query("UPDATE {user_stats_values} SET value = value + 1 WHERE name = 'badge_count' AND uid = %d", $uid);
+        user_stats_cache_set('reset', $uid);
+      }
+      else {
+        user_badges_stats_badge_count_update('reset', $uid);
+      }
+      break;
+    case 'decrement':
+      if (user_stats_isset('badge_count', $uid)) {
+        db_query("UPDATE {user_stats_values} SET value = value - 1 WHERE name = 'badge_count' AND uid = %d", $uid);
+        user_stats_cache_set('reset', $uid);
+      }
+      else {
+        user_badges_stats_badge_count_update('reset', $uid);
+      }
+      break;
+    case 'reset':
+      $badges = user_badges_get_user_badges($uid, array('nolimit' => TRUE));
+      $badge_count = count($badges);
+      db_query("DELETE FROM {user_stats_values} WHERE name = 'badge_count' AND uid = %d", $uid);
+      db_query("INSERT INTO {user_stats_values} (name, uid, value) VALUES ('badge_count', %d, %d)", $uid, $badge_count);
+      user_stats_cache_set('badge_count', $uid, $badge_count);
+      break;
+  }
+  // Flush token cache
+  if (module_exists('token')) {
+    token_get_values('user', NULL, TRUE);
+  }
+
+  // Allow modules to react to a statistic change.
+  module_invoke_all('user_badges_stats', 'badge_count', $op, $uid, user_badges_stats_get_stats('badge_count', $uid));
+}
+
+/**
+ * Manage the weekly badge count of a given user.
+ *
+ * @param $op The operation to perform on the count: increment, decrement, reset
+ * @param $uid User id that should be updated.
+ */
+function user_badges_stats_badges_week_update($op, $uid) {
+  if (!is_numeric($uid)) {
+    return;
+  }
+
+  switch ($op) {
+    case 'increment':
+      if (user_stats_isset('badges_week', $uid)) {
+        db_query("UPDATE {user_stats_values} SET value = value + 1 WHERE name = 'badges_week' AND uid = %d", $uid);
+        user_stats_cache_set('reset', $uid);
+      }
+      else {
+        user_badges_stats_badges_week_update('reset', $uid);
+      }
+      break;
+    case 'decrement':
+      if (user_stats_isset('badges_week', $uid)) {
+        // The weekly count is badge activity, so even if the badge removed wasn't earned in the week, the action of removing it was
+        db_query("UPDATE {user_stats_values} SET value = value - 1 WHERE name = 'badges_week' AND uid = %d", $uid);
+        user_stats_cache_set('reset', $uid);
+      }
+      else {
+        user_badges_stats_badges_week_update('reset', $uid);
+      }
+      break;
+    case 'reset':
+      $week_stamp = _user_badges_stats_week_stamp();
+      $badges_week = db_result(db_query("SELECT COUNT(*) FROM {user_badges_user} WHERE uid = %d AND earned >= %d", $uid, $week_stamp));
+      db_query("DELETE FROM {user_stats_values} WHERE name = 'badges_week' AND uid = %d", $uid);
+      db_query("INSERT INTO {user_stats_values} (name, uid, value) VALUES ('badges_week', %d, %d)", $uid, $badges_week);
+      user_stats_cache_set('badges_week', $uid, $badges_week);
+      break;
+  }
+  // Flush token cache
+  if (module_exists('token')) {
+    token_get_values('user', NULL, TRUE);
+  }
+
+  // Allow modules to react to a statistic change.
+  module_invoke_all('user_badges_stats', 'badges_week', $op, $uid, user_badges_stats_get_stats('badges_week', $uid));
+}
+
+/**
+ * Helper function for a timestamp for the beginning of the week
+ */
+function _user_badges_stats_week_stamp() {
+  return mktime(1, 0, 0, date('m'), date('d')-date('w'), date('Y'));
+}

@@ -224,10 +224,21 @@ function user_badges_edit_form($form_state, $bid = NULL) {
   }
 
   if (module_exists('taxonomy')) {
-    if (variable_get('user_badges_vid', '')) {
+    $user_badges_vid = variable_get('user_badges_vid', '');
+    if ($user_badges_vid) {
       $form['tid'] = taxonomy_form(variable_get('user_badges_vid', ''), $edit->tid);
       // Taxonomy sets the weight to -15, so we should get rid of it to preserve the ordering.
       unset($form['tid']['#weight']);
+      // Only one term is allowed per badge, so set the form element accordingly.
+      $form['tid']['#type'] = 'select';
+      $form['tid']['#multiple'] = FALSE;
+      $form['tid']['#size'] = 0;
+      $form['tid']['#default_value'] = NULL;
+      // Pass the vid along so we can use the tid as a proper term
+      $form['vid'] = array(
+        '#type' => 'value',
+        '#value' => $user_badges_vid,
+      );
     }
     else {
       $form['tid']['help'] = array(
@@ -322,17 +333,17 @@ function user_badges_edit_form_submit($form, &$form_state) {
   if (isset($edit->bid) && preg_match("/^[0-9]+$/D", $edit->bid)) {
     db_query('DELETE FROM {user_badges_badges} WHERE bid = %d', $edit->bid);
     $result = db_query("
-      INSERT INTO {user_badges_badges} (bid, name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid)
-      VALUES (%d, '%s', '%s', %d, '%s', %d, %d, %d, %d)",
-      $edit->bid, trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid
+      INSERT INTO {user_badges_badges} (bid, name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid, vid)
+      VALUES (%d, '%s', '%s', %d, '%s', %d, %d, %d, %d, %d)",
+      $edit->bid, trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid, $edit->vid
     );
   }
   // If the badge does not already exist, create it anew.
   else {
     $result = db_query("
-      INSERT INTO {user_badges_badges} (name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid)
-      VALUES ('%s', '%s', %d, '%s', %d, %d, %d, %d)",
-      trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid
+      INSERT INTO {user_badges_badges} (name, image, weight, href, unhideable, fixedweight, doesnotcounttolimit, tid, vid)
+      VALUES ('%s', '%s', %d, '%s', %d, %d, %d, %d, %d)",
+      trim($edit->name), $image, $edit->weight, trim($edit->href), $edit->unhideable, $edit->fixedweight, $edit->doesnotcounttolimit, $edit->tid, $edit->vid
     );
   }
   if ($result) {

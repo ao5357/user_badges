@@ -1,0 +1,8 @@
+
+name = User Badge Stats
+description = Provides queryable statistics on user badges
+dependencies[] = job_queue
+dependencies[] = user_badges
+dependencies[] = user_stats
+
+core = 6.x

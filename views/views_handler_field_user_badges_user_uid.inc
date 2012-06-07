@@ -20,7 +20,7 @@ class views_handler_field_user_badges_user_uid extends views_handler_field {
       //For the text options, get the badge objects and format their names
       case 'linked_text':
       case 'unlinked_text':
-        $user_badges = user_badges_get_badges($uid);
+        $user_badges = user_badges_get_user_badges($uid, array('nolimit' => TRUE));
         
         //If we have no badges for the user, just return nothing.
         if (count($user_badges) == 0) {
@@ -40,7 +40,7 @@ class views_handler_field_user_badges_user_uid extends views_handler_field {
       
       //Send the array of badge objects to the custom theme function
       case 'custom_theme':
-        $user_badges = user_badges_get_badges($uid);
+        $user_badges = user_badges_get_user_badges($uid, array('nolimit' => TRUE));
         return theme($this->options['theme'], $user_badges);
         
       //This case is for everything else. It returns the normal themed badges.

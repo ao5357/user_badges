@@ -1,0 +1,8 @@
+name = User Badges Field
+description = Defines a field type for referencing badges from a node.
+dependencies[] = content
+dependencies[] = text
+dependencies[] = optionwidgets
+dependencies[] = user_badges
+package = CCK
+core = 6.x

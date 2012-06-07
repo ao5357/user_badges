@@ -1,0 +1,390 @@
+<?php
+
+/**
+ * @file Defines a field type for referencing a badge from a node.
+ */
+
+/**
+ * Implementation of hook_field_info().
+ */
+function user_badges_field_field_info() {
+  return array(
+    'user_badges_field' => array(
+      'label' => t('User Badge'),
+      'description' => t('Store the ID of a related badge as an integer value.'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_field_settings().
+ */
+function user_badges_field_field_settings($op, $field) {
+  switch ($op) {
+    case 'form':
+      return array();
+
+    case 'save':
+      return array();
+
+    case 'database columns':
+      $columns = array(
+        'bid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE),
+      );
+      return $columns;
+
+    case 'views data':
+      $data = content_views_field_views_data($field);
+      $db_info = content_database_info($field);
+      $table_alias = content_views_tablename($field);
+
+      $data[$table_alias][$field['field_name'] .'_bid']['filter']['handler'] = 'content_handler_filter_many_to_one';
+      $data[$table_alias][$field['field_name'] .'_bid']['argument']['handler'] = 'content_handler_argument_reference';
+      $data[$table_alias][$field['field_name'] .'_bid']['argument']['name table'] = "node_$table_alias";
+      $data[$table_alias][$field['field_name'] .'_bid']['argument']['name field'] = 'title';
+      $data["node_$table_alias"]['table']['join']['node'] = array(
+        'table' => 'node',
+        'field' => 'vid',
+        'left_table' => $table_alias,
+        'left_field' => 'vid',
+      );
+      $data['user_badges_badges']['table']['join']['node'] = array(
+        'field' => 'bid',
+        'left_field' => $field['field_name'] .'_bid',
+        'left_table' => $table_alias,
+      );
+      return $data;
+  }
+}
+
+/**
+ * Implementation of hook_field().
+ */
+function user_badges_field_field($op, &$node, $field, &$items, $teaser, $page) {
+  switch ($op) {
+    case 'validate':
+      $badges = user_badges_get_badges('all');
+      foreach ($items as $delta => $item) {
+        if (is_array($item) && !empty($item['error_field'])) {
+          $error_field = $item['error_field'];
+          unset($item['error_field']);
+          if (!empty($item['bid'])) {
+            if (!array_key_exists($item['bid'], $badges)) {
+              form_set_error($error_field, t("%name : This badge does not exist.", array('%name' => t($field['widget']['label']))));
+            }
+          }
+        }
+      }
+      return $items;
+  }
+}
+
+/**
+ * Implementation of hook_content_is_empty().
+ */
+function user_badges_field_content_is_empty($item, $field) {
+  if (empty($item['bid'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function user_badges_field_theme() {
+  return array(
+    'user_badges_field_autocomplete' => array(
+      'arguments' => array('element'),
+    ),
+    'user_badges_field_select' => array(
+      'arguments' => array('element'),
+    ),
+    'user_badges_field_formatter_default' => array(
+      'arguments' => array('element'),
+    ),
+    'user_badges_field_formatter_name' => array(
+      'arguments' => array('element'),
+    ),
+    'user_badges_field_formatter_bid' => array(
+      'arguments' => array('element'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function user_badges_field_field_formatter_info() {
+  return array(
+    'default' => array(
+      'label' => t('Default'),
+      'field types' => array('user_badges_field'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    'name' => array(
+      'label' => t('Badge name, plain text'),
+      'field types' => array('user_badges_field'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    'bid' => array(
+      'label' => t('Badge bid'),
+      'field types' => array('user_badges_field'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+  );
+}
+
+/**
+ * Theme function for 'default' user_badges_field field formatter.
+ */
+function theme_user_badges_field_formatter_default($element) {
+  $output = ''; $badge = NULL;
+  if (!empty($element['#item']['bid']) && is_numeric($element['#item']['bid'])) {
+    $badge = user_badges_get_badge($element['#item']['bid']);
+  }
+
+  if ($badge->name) {
+    $output = theme('user_badge', $badge);
+  }
+  return $output;
+}
+
+/**
+ * Theme function for 'title' user_badges_field field formatter.
+ */
+function theme_user_badges_field_formatter_name($element) {
+  $output = ''; $badge = NULL;
+  if (!empty($element['#item']['bid']) && is_numeric($element['#item']['bid'])) {
+    $badge = user_badges_get_badge($element['#item']['bid']);
+  }
+
+  if ($badge->name) {
+    $output = $badge->name;
+  }
+  return $output;
+}
+
+/**
+ * Theme function for 'bid' user_badges_field field formatter.
+ */
+function theme_user_badges_field_formatter_bid($element) {
+  $output = ''; $badge = NULL;
+  if (!empty($element['#item']['bid']) && is_numeric($element['#item']['bid'])) {
+    $badge = user_badges_get_badge($element['#item']['bid']);
+  }
+
+  if ($badge->bid) {
+    $output = $badge->bid;
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_token_list().
+ */
+function user_badges_field_token_list($type = 'all') {
+  if ($type == 'field' || $type == 'all') {
+    $tokens = array();
+    $tokens['user_badges_field']['bid'] = t("Badge bid");
+    $tokens['user_badges_field']['name'] = t("The badge name");
+    $tokens['user_badges_field']['image'] = t("The path to the badge image");
+    $tokens['user_badges_field']['href'] = t("The path to the badge info page");
+    $tokens['user_badges_field']['tid'] = t("The taxonomy term associated with the badge");
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_token_values().
+ */
+function user_badges_field_token_values($type, $object = NULL) {
+  if ($type == 'field' && !empty($object[0]['bid']) && is_numeric($object[0]['bid'])) {
+    $badge = user_badges_get_badge($object[0]['bid']);
+    $tokens['bid'] = $badge->bid;
+    $tokens['name'] = $badge->name;
+    $tokens['image'] = $badge->image;
+    $tokens['href'] = $badge->href;
+    $tokens['tid'] = $badge->tid;
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_widget_info().
+ */
+function user_badges_field_widget_info() {
+  return array(
+    'user_badges_field_autocomplete' => array(
+      'label' => t('Autocomplete text field'),
+      'field types' => array('user_badges_field'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array(
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+    ),
+    'user_badges_field_select' => array(
+      'label' => t('Select list'),
+      'field types' => array('user_badges_field'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array(
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of FAPI hook_elements().
+ */
+function user_badges_field_elements() {
+  return array(
+    'user_badges_field_autocomplete' => array(
+      '#input' => TRUE,
+      '#columns' => array('name'), '#delta' => 0,
+      '#process' => array('user_badges_field_autocomplete_process'),
+      '#autocomplete_path' => FALSE,
+    ),
+    'user_badges_field_select' => array(
+      '#input' => TRUE,
+      '#columns' => array('uid'), '#delta' => 0,
+      '#process' => array('user_badges_field_select_process'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_widget().
+ */
+function user_badges_field_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  switch ($field['widget']['type']) {
+    case 'user_badges_field_autocomplete':
+      $element = array(
+        '#type' => 'user_badges_field_autocomplete',
+        '#default_value' => isset($items[$delta]) ? $items[$delta] : NULL,
+        '#value_callback' => 'user_badges_field_autocomplete_value',
+      );
+      break;
+    case 'user_badges_field_select':
+      $element = array(
+        '#type' => 'user_badges_field_select',
+        '#default_value' => $items,
+      );
+      break;
+  }
+  return $element;
+}
+
+/**
+ * Process an autocomplete element.
+ */
+function user_badges_field_autocomplete_process($element, $edit, $form_state, $form) {
+  $field_key  = $element['#columns'][0];
+
+  $element[$field_key] = array(
+    '#type' => 'text_textfield',
+    '#default_value' => isset($element['#value']) ? $element['#value'] : '',
+    '#autocomplete_path' => 'user_badges/autocomplete',
+
+    // The following values were set by the content module and need
+    // to be passed down to the nested element.
+    '#field_name' => $element['#field_name'],
+    '#delta' => $element['#delta'],
+    '#columns' => $element['#columns'],
+    '#title' => $element['#title'],
+    '#required' => $element['#required'],
+    '#description' => $element['#description'],
+  );
+  if (empty($element[$field_key]['#element_validate'])) {
+    $element[$field_key]['#element_validate'] = array();
+  }
+  array_unshift($element[$field_key]['#element_validate'], 'user_badges_field_autocomplete_validate');
+
+  return $element;
+}
+
+function user_badges_field_autocomplete_validate($element, &$form_state) {
+  $field_key  = $element['#columns'][0];
+  $value = $element['#value'][$field_key];
+  $bid = NULL;
+  if (!empty($value)) {
+    $normal_validation = user_badges_badge_autocomplete_validation($value);
+
+    if ($normal_validation[1] == 'valid') {
+      $bid = $normal_validation[0];
+    }
+    else {
+      form_set_error($element[$field_key], t('This is not a valid badge id'));
+    }
+  }
+  form_set_value($element, $bid, $form_state);
+  return $element;
+}
+
+/**
+ * Provides a human-readable value (like an _autocomplete function),
+ * but from the stored value rather than the typed name
+ * Used when loading the widget(?)
+ */
+function user_badges_field_autocomplete_value($element, $edit = FALSE) {
+  $field_key = $element['#columns'][0];
+  $value = NULL;
+  if (!empty($element['#default_value'][$field_key])) {
+    $bid = $element['#default_value'][$field_key];
+    $badge = db_fetch_object(db_query('SELECT * FROM {user_badges_badges} WHERE bid = %d', $bid));
+    $value = ($badge->name) ? $badge->name . ' (' . t('Badge ID') . ' ' . $bid .')' : $bid;
+  }
+  return array($field_key => $value);
+}
+
+/**
+ * Implementation of hook_allowed_values().
+ */
+function user_badges_field_allowed_values($field) {
+  $badges = user_badges_get_badges();
+  $options = array();
+
+  foreach ($badges as $bid => $badge) {
+    $options[$bid] = $badge->name;
+  }
+
+  if (!$field['required']) {
+    $options[0] = ' - '. t('none') .' - ';
+  }
+  ksort($options);
+  return $options;
+}
+
+/**
+ * Process a select element.
+ */
+function user_badges_field_select_process($element, $edit, $form_state, $form) {
+  $field = $form['#field_info'][$element['#field_name']];
+  $field_key  = $element['#columns'][0];
+  $element[$field_key] = array(
+    '#type' => 'select',
+    '#options' => user_badges_field_allowed_values($field),
+    '#default_value' => isset($element['#value']) ? $element['#value'] : '',
+
+    // The following values were set by the content module and need
+    // to be passed down to the nested element.
+    '#field_name' => $element['#field_name'],
+    '#delta' => $element['#delta'],
+    '#columns' => $element['#columns'],
+    '#title' => $element['#title'],
+    '#required' => $element['#required'],
+    '#description' => $element['#description'],
+  );
+  return $element;
+}
+
+/**
+ * FAPI theme for an individual elements.
+ */
+function theme_user_badges_field_autocomplete($element) {
+  return $element['#children'];
+}
+
+function theme_user_badges_field_select($element) {
+  return $element['#children'];
+}

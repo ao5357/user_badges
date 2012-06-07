@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function user_badges_field_install() {
+  content_notify('install', 'user_badges_field');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function user_badges_field_uninstall() {
+  content_notify('uninstall', 'user_badges_field');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function user_badges_field_enable() {
+  content_notify('enable', 'user_badges_field');
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function user_badges_field_disable() {
+  content_notify('disable', 'user_badges_field');
+}
